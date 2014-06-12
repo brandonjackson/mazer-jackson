@@ -1,8 +1,18 @@
 mazer-jackson
 =============
 
+### Summary
+
 Code base for V4 cell analysis written by Brandon Jackson for Jamie Mazer's
  lab
+
+### Examples
+
+Examples are contained in the `Examples/` directory. Each example consists
+of a matlab file containing demo code and png files that show the output of
+the sample code.
+
+### Code Overview
 
 There are two general kinds of classes in the code base: those that are 
 objects designed to facilitate model building and testing and those that
@@ -31,6 +41,19 @@ Loaders are used to load stimulus images. All loaders have consistent
 public APIs to make it easy for Models or other classes to interact with
 multiple stimulus classes.
 
+For example, here is the code to load random stimuli for both an AnglePlay
+stimulus and a GratRev stimulus.
+
+    APL = AnglePlayLoader();
+    angleplay_stimulus = APL.randomStimulus();
+    
+    GRL = GratRevLoader();
+    gratrev_stimulus = GRL.randomStimulus();
+
+These functions both use the public function `randomStimulus()`.
+
+**Shared Public Methods**: `randomStimulus()`
+
 - AnglePlayLoader
 - GratRevLoader
 - GratRevBarLoader
@@ -44,6 +67,8 @@ Models are used to generate responses to stimuli. All loaders have consistent
 public APIs to make it easy for Writers or other classes to interact with
 multiple models.
 
+**Shared Public Methods**: `stimulate()`
+
 - ComplexCellModel
 - GaborModel
 - SimpleCellModel
@@ -55,9 +80,16 @@ Writers take p2m files and re-run experiments, presenting the stimuli
 (loaded via a Loader class) to a Model, and then recording the responses
 to a new synthetically-generated p2m file.
 
-    - AnglePlayWriter
-    - GratRevWriter
-    - SuperWriter
+In addition to using a model to generate a spike train, it is also possible
+to generate a poisson spike train using the `homogeneousPoisson()` and 
+`inhomogeneousPoisson()` methods.
+
+**Shared Public Methods**: `writeFromModel()`,`discardRandomSpikes()`,
+`homogeneousPoisson()`, `inhomogeneousPoisson()`
+
+- AnglePlayWriter
+- GratRevWriter
+- SuperWriter
 
 Analysis Classes
 ----------------
@@ -77,9 +109,9 @@ type.
 These classes perform analysis tasks that are shared (in theory) across 
 multiple tasks.
 
-    - PFUtil
-    - RasterUtil
-    - SuperUtil
+- PFUtil
+- RasterUtil
+- SuperUtil
 
 There are two exceptions, which contain util functions specific to a
 stimulus class. These might be merged into their respective Core classes
@@ -114,7 +146,19 @@ To-Do List
 
 - Loader classes should output consistent image sizes (e.g. 400 x 400) with 
 consistent range (e.g. [0,1] or [-0.5,0.5])
-- `gabor_filter.m` and gabor_filter_translate.m` should be moved to a class
+- The inputs needed to instantiate model classes (especially
+`ComplexCellModel`!) must be simplified and documented ASAP. Additionally,
+I need to ensure that the ouputs of all model classes are consistent, and
+then document it, perhaps in a how-to-write-a-model guide.
+- A new system for organizing analysis code is necessary, because at the
+moment it is very difficult to figure out whether code is in `RasterUtil`,
+`SuperUtil`, or `PFUtil`. For example, perhaps `SuperUtil.autocorrelogram()`
+should be moved to a class dedicated to correlograms?
+- `AnglePlayUtil` and `GratRevUtil` should be made static methods of their
+respective Core classes
+- `gabor_filter.m` and `gabor_filter_translate.m` should be moved to a class
 definition
 - `SuperUtil.bootstrappedAutocorrelogram()` should be merged into 
 `SuperUtil.autocorrelogram()`, and perhaps moved to a new class
+- Poisson analysis code should be moved out of `SuperUtil` and into its own
+ class
