@@ -383,6 +383,11 @@ classdef SuperUtil < handle
         end
         
         function [hist_n, hist_bins] = autocorrelogram(pf, BIN_WIDTH)
+        % AUTOCORRELOGRAM computes response autocorrelogram
+        % This function is particularly useful for detecting oscillations.
+        % The histogram uses the specified BIN_WIDTH, if provided.
+        % If no output args provided, it plots a bar plot of the histogram.
+        % Else it returns the counts (HIST_N) and bin centers (HIST_BINS).
             
             SEARCH_WINDOW = 2000; % measure correlations with +/- WINDOW elements in spikes vector
             PLOT_WINDOW = 250; % xlim = +/- PLOT_WINDOW

@@ -209,13 +209,13 @@ classdef RasterUtil < SuperUtil
             winsizes = [30,50,100];
             rs = zeros(length(winsizes),length(offsets));
             for i=1:length(winsizes)
-                for j=1:length(offsets)
+                parfor j=1:length(offsets)
                     rs(i,j) = RasterUtil.explainableVariance(pf,offsets(j),winsizes(i));
                 end
             end
             
             figure();
-            plot(offsets,rs','-o');
+            plot(offsets,rs.^2','-o');
             title([PFUtil.experName(pf) ' Explainable Variance']);
             ylabel('explainable variance (r^2)');
             xlabel('offset time (ms)');
