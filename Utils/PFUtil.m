@@ -199,6 +199,16 @@ classdef PFUtil < SuperUtil
             end
         end
         
+        function d = duration(pf)
+        % DURATION finds an approximation of the total time of the
+        % experiment across all trials.
+            d = 0;
+            for i=1:length(pf.rec)
+                [start,stop] = PFUtil.trialStartStop(pf,i);
+                d = d + (stop - start);
+            end
+        end
+        
         function new_pf = copyParam(pf, key)
         % COPYPARAM copies the value of param KEY stored in the first PF rec
         % to all subsequent recs. This is required when randomly drawing

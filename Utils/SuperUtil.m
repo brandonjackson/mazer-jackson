@@ -1,5 +1,9 @@
 classdef SuperUtil < handle
-    % SUPERUTIL
+    % SUPERUTIL high-level util functions
+    %
+    % SuperUtil was originally intended to be the super class that all other
+    % util classes extend, it now is home to a lot of poisson spike train
+    % analysis code. This code needs to be moved elsewhere!
     
     properties
              
@@ -74,7 +78,7 @@ classdef SuperUtil < handle
             ngrams = zeros([1 N_MAX_PRIORS+1]);
             
             % 0th probability
-            ngrams(1) = length(priors) / SuperUtil.duration(pf);
+            ngrams(1) = length(priors) / PFUtil.duration(pf);
             
             % 1st...nth order:
             for n=0:N_MAX_PRIORS
@@ -299,7 +303,7 @@ classdef SuperUtil < handle
                     xlabel('ISI (ms)');
                 end
             end
-            boxtitle([SuperUtil.experName(pf) ' Burst ISI']);
+            boxtitle([PFUtil.experName(pf) ' Burst ISI']);
         end
         
         function [x,ys,errs] = plotBootstrappedBurstISI(pf, MAX_BURST)
@@ -327,7 +331,7 @@ classdef SuperUtil < handle
                     xlabel('ISI (ms)');
                 end
             end
-            boxtitle([SuperUtil.experName(pf) ' Burst ISI']);
+            boxtitle([PFUtil.experName(pf) ' Burst ISI']);
             
             subplot(length(BURST_SIZES),2,2:2:(length(BURST_SIZES)*2));
             cdfs = cumsum(ys,2);
@@ -364,24 +368,7 @@ classdef SuperUtil < handle
             counts = raw_counts(raw_counts > 0);
             rates = raw_rates(raw_counts > 0);
         end
-        
-        function n = spikeCount(pf)
-            warning('Deprecated. Use PFUtil.spikeCount() instead');
-            n = PFUtil.spikeCount(pf);
-        end
-        
-        function d = duration(pf)
-        % DURATION finds an approximation of the total time of the
-        % experiment across all trials. It is not precise, because it finds
-        % the start/stop time by looking for the times of the first and
-        % last spikes.
-            d = 0;
-            for i=1:length(pf.rec)
-                spikes = pf.rec(i).spike_times;
-                d = d + (max(spikes) - min(spikes));
-            end
-        end
-        
+               
         function [hist_n, hist_bins] = autocorrelogram(pf, BIN_WIDTH)
         % AUTOCORRELOGRAM computes response autocorrelogram
         % This function is particularly useful for detecting oscillations.
@@ -574,7 +561,7 @@ classdef SuperUtil < handle
             legend('Observed',['Poisson, FR=' num2str(round(mean_rate))], ['Poisson, FR Varying, winsize=' num2str(POISSON_WINDOW)],'Location','SouthEast');
             ylabel('Expected # Spikes Per Bin');
             xlabel(['n (Bin Width = n*\lambda^{-1} = n*' num2str(round(bin)) 'ms)']);
-            title([SuperUtil.experName(pf) ' Expected Spikes Per Bin']);
+            title([PFUtil.experName(pf) ' Expected Spikes Per Bin']);
             xlim([min(ns_obs), max(ns_obs)]);
         end
         
@@ -625,7 +612,7 @@ classdef SuperUtil < handle
                 xlabel('%');
                 ylabel('Spikes In Bin');
                 ylim([-0.5 last_nonzero_i - 0.5]);
-                boxtitle(sprintf('%s Spikes in %d-%dms', SuperUtil.experName(pf), latency, latency + winsize));
+                boxtitle(sprintf('%s Spikes in %d-%dms', PFUtil.experName(pf), latency, latency + winsize));
             end
         end
         
@@ -775,11 +762,6 @@ classdef SuperUtil < handle
             line([latency+winsize latency+winsize],[min(y_range) max(y_range)],'LineStyle','--','Color','b');
             ylim(y_range);
             title('PSTH','fontweight','bold');
-        end
-        
-        function name = experName(pf)
-            warning('Deprecated. Use PFUTil.experName() instead.');
-            name = PFUtil.experName(pf);
         end
 
         
