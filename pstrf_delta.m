@@ -1,5 +1,8 @@
 function theta = pstrf_delta(pf, lambda,  varargin)
-% PSTRF plots the strf for the given PF file
+% PSTRF plots the strf for the given PF file using derivative
+% stimulus representation (i.e. stims as delta functions)
+% i.e. instead of a 5 ms stimulus represented as 0 1 1 1 1 1 0
+%                           it is represented as 0 1 0 0 0 0 0
 
 if nargin < 2
     lambda = 0;
