@@ -1,5 +1,8 @@
 classdef AnglePlayLoader < handle
-    % ANGLEPLAYLOADER complex cell model
+    % ANGLEPLAYLOADER load AnglePlay stimuli
+    %
+    % @todo implement getByTrigger()
+    % @todo implement getByStimulusParams()
     
     properties
         
@@ -10,7 +13,6 @@ classdef AnglePlayLoader < handle
     end
     
 	properties (Constant)
-    	GRIDCURV_PATH = '/lab/stimuli/gridcurv/7';
         ANGLEPLAY_PATH = '/lab/stimuli/curvplay_jackson2/angles_medium';
         MAX_WIDTH = 400;
     end
