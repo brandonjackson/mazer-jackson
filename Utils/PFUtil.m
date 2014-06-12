@@ -144,6 +144,7 @@ classdef PFUtil < SuperUtil
         end
         
         function prefix = framePrefix(pf)
+        % FRAMEPREFIX looks up frame prefix used in rec's ev_e array
             task = PFUtil.taskName(pf);
             is = strcmp(PFUtil.FRAME_PREFIX(:,1),task);
             if sum(is) > 0
@@ -154,6 +155,7 @@ classdef PFUtil < SuperUtil
         end
         
         function prefix = gapPrefix(pf)
+        % GAPPREFIX looks up gap frame prefix used in rec's ev_e array
             task = PFUtil.taskName(pf);
             is = strcmp(PFUtil.GAP_PREFIX(:,1),task);
             if sum(is) > 0
@@ -164,24 +166,29 @@ classdef PFUtil < SuperUtil
         end
         
         function [start,stop] = trialStartStop(pf, trial_i)
+        % TRIALSTARTSTOP finds START and STOP time of TRIAL_I (in ms)
+        % At first it tries to find stimulate_start/stimulate_end events
+        % but then if that fails looks for eye_start/eye_stop evens
+        % but then if _that_ fails it adds padding to the first and last
+        % spike times
             
-                [~,start] = PFUtil.findEvents(pf,trial_i,'stimulate_start');
-                [~,stop] = PFUtil.findEvents(pf,trial_i,'stimulate_end');
-                
-                % Try another starter cue
-                if isempty(start)
-                    [~,start] = PFUtil.findEvents(pf,trial_i,'eye_start');
-                    [~,stop] = PFUtil.findEvents(pf,trial_i,'eye_stop');
-                end
-                
-                % If that also fails, then bust out this hack:
-                % use the start and stop spike times with some offsets
-                TRIAL_OFFSET = 2000;
-                if isempty(start)
-                    warning('HACK ALERT: stimulate_start and stimulate_end events missing, hacking with spike times');
-                    start = min(pf.rec(trial_i).spike_times)-TRIAL_OFFSET;
-                    stop = max(pf.rec(trial_i).spike_times)+TRIAL_OFFSET;
-                end
+            [~,start] = PFUtil.findEvents(pf,trial_i,'stimulate_start');
+            [~,stop] = PFUtil.findEvents(pf,trial_i,'stimulate_end');
+
+            % Try another starter cue
+            if isempty(start)
+                [~,start] = PFUtil.findEvents(pf,trial_i,'eye_start');
+                [~,stop] = PFUtil.findEvents(pf,trial_i,'eye_stop');
+            end
+
+            % If that also fails, then bust out this hack:
+            % use the start and stop spike times with some offsets
+            TRIAL_OFFSET = 2000;
+            if isempty(start)
+                warning('HACK ALERT: stimulate_start and stimulate_end events missing, hacking with spike times');
+                start = min(pf.rec(trial_i).spike_times)-TRIAL_OFFSET;
+                stop = max(pf.rec(trial_i).spike_times)+TRIAL_OFFSET;
+            end
         end
                 
         function n = spikeCount(pf)
@@ -263,6 +270,10 @@ classdef PFUtil < SuperUtil
         %% Stimulus and Rate Matrix Extractors
                 
         function spikes = spikeVectors(pf, varargin)
+        % SPIKEVECTORS extracts binary vectors with spikes for each trial from p2m file
+        % For example, this is used when computing the STRF.
+        %
+        % @todo document options
 
             
             p = inputParser;
@@ -311,6 +322,10 @@ classdef PFUtil < SuperUtil
         end
         
         function rates = rateVectors(pf, varargin)
+        % RATE extracts vectors with firing rates for each trial from p2m file
+        % For example, this is used when computing the STRF.
+        %
+        % @todo document options
             
             p = inputParser;
             addRequired(p,'pf');
@@ -352,6 +367,11 @@ classdef PFUtil < SuperUtil
         
         
         function stims = stimulusMatrices(pf, varargin)
+        % STIMULUSMATRICES extracts matrices of stim feature vectors over time from p2m file
+        % For example, this is used when computing the STRF.
+        %
+        % @todo document options
+
             
             p = inputParser;
             addRequired(p,'pf');
@@ -615,7 +635,13 @@ classdef PFUtil < SuperUtil
         end
         
         function spikes = concatenateSpikes(pf)
-        % Deprecated. Use spikeVectors() instead.
+        % CONCATENATESPIKES gets vector of spike times concatenated
+        % together
+        %
+        % @todo: Deprecate this. Use PFUtil.spikeVectors() instead. The
+        % problem is that spikeVectors returns a binary vector sampled at
+        % 1ms resolution, and this function returns the literal spike
+        % times.
             
             n_spikes = PFUtil.spikeCount(pf);
             spikes = zeros(n_spikes,1);
@@ -638,30 +664,42 @@ classdef PFUtil < SuperUtil
         %% Stimulus Temporal Analysis
         
         function [f, mean_fdur, mean_gapdur] = stimulusCarrierFrequency(pf)
+        % STIMULUSCARRIERFREQUENCY finds carrier frequency of stimulus
+        % To get the most accurate measurement, it is calculated
+        % empirically by looking at the actual intervals between frame
+        % flips. There are two reasons this is best: (1) different tasks
+        % files have different frame duration codes and it is difficult to
+        % handle them all the same way (2) the actual intervals are not the
+        % same as the duration params due to integer math errors.
+        %
+        % @todo fix mean_gapdur, which is broken at the moment
+        
             params = pf.rec(1).params;
             taskname = PFUtil.taskName(pf);
-            found_empirically = 0;
-            if strcmp(taskname,'curvplay') || strcmp(taskname,'gridcurv')
-                fdur = cell2mat(params.fdur);
-                gapdur = cell2mat(params.gapdur);
-                mean_fdur = mean(fdur);
-                mean_gapdur = mean(gapdur);
-            elseif strcmp(taskname,'msgrating')
-                mean_fdur = params.target_hold;
-                mean_gapdur = params.gap_hold;
-			elseif isfield(params,'dur')
-                mean_fdur = abs(params.dur);
-                mean_gapdur = 0;
-            else
-                % if can't find via params, get an empirical estimate
-                raster = prast(pf);
-                isis = diff(raster.trialtimes);
-                mean_fdur = median(isis);
-               % warning('cannot find frame duration, using default');
-               % mean_fdur = 200;
-                mean_gapdur = 0;
-                found_empirically = 1;
-            end
+            
+%             % The Old Way: Calcualate using duration params
+%             found_empirically = 0;
+%             if strcmp(taskname,'curvplay') || strcmp(taskname,'gridcurv')
+%                 fdur = cell2mat(params.fdur);
+%                 gapdur = cell2mat(params.gapdur);
+%                 mean_fdur = mean(fdur);
+%                 mean_gapdur = mean(gapdur);
+%             elseif strcmp(taskname,'msgrating')
+%                 mean_fdur = params.target_hold;
+%                 mean_gapdur = params.gap_hold;
+% 			elseif isfield(params,'dur')
+%                 mean_fdur = abs(params.dur);
+%                 mean_gapdur = 0;
+%             else
+%                 % if can't find via params, get an empirical estimate
+%                 raster = prast(pf);
+%                 isis = diff(raster.trialtimes);
+%                 mean_fdur = median(isis);
+%                % warning('cannot find frame duration, using default');
+%                % mean_fdur = 200;
+%                 mean_gapdur = 0;
+%                 found_empirically = 1;
+%             end
             
             % if can't find via params, get an empirical estimate
             raster = prast(pf);
