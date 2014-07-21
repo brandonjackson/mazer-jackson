@@ -312,15 +312,32 @@ classdef RasterUtil < SuperUtil
             lat = null_ts(ceil((null_diff_peak + 2*null_diff2_peak)/3));
         end
         
-         function [] = plotRateClusters(pf, n_clusters)
+        function [] = plotRateClusters(pf, n_clusters,latency)
+            
+        % PLOTRATECLUSTERS finds clusters in firing rates for an experiment
+        %
+        % Uses k-means clustering to look for clusters in the firing rates 
+        % to different stimuli for a single p2m file, PF. By default it 
+        % scales/normalizes the rates so that the highest firing rate for
+        % each is equal to one.
+        %
+        % If N_CLUSTERS not provided, the correct number of clusters is
+        % automatically determined. If LATENCY, the time of the transient
+        % onset (in ms) is not provided, it too is calculated
+        % automatically. Sometimes the estimation of this onset time is
+        % bad, and providing a manual time is the best option.
              
             if nargin < 2
                 n_clusters = 'auto';
             end
+            
+            if nargin < 3
+                % If no onset latency provided, find one automatically
+                latency = RasterUtil.latency(pf);
+            end
              
             [rates_full,ts_full,triggers] = RasterUtil.rates(pf);
             
-            latency = RasterUtil.latency(pf);
             PRE_LATENCY_WINDOW = 20;
             T_MIN = latency - PRE_LATENCY_WINDOW;
             T_MAX_DEFAULT = 250;
@@ -339,57 +356,27 @@ classdef RasterUtil < SuperUtil
             ts = ts_full(rate_i_min:rate_i_max);
             
             mean_rate = mean(rates(:));
+            
+            %% Rate Processing
+            
+            % OPTION 1
+            % Normalize rates so max is 1
             for i=1:size(rates,1)
-                rates(i,:) = rates(i,:) - mean(rates(i,:));% - mean_rate;
-                rates(i,:) = rates(i,:) / std(rates(i,:));
+                rates(i,:) = rates(i,:) / max(rates(i,:));
             end
             
+%             % OPTION 2
+%             % Z-Score the Rates!
+%             for i=1:size(rates,1)
+%                 rates(i,:) = rates(i,:) - mean(rates(i,:));% - mean_rate;
+%                 rates(i,:) = rates(i,:) / std(rates(i,:));
+%             end
+            
+            % get rid of Nan Rates
             rates = rates(~isnan(mean(rates,2)),:);
-% 
-%             path = ['/lab/results/batch_pstrfs/' stimulus '/'];
-%             files_query = sprintf('%s*%.2f*.mat',path,lambda);
-%             files = dir(files_query);
-% 
-%             if strcmp(stimulus,'angleplay')
-%                 N_LAGS = 24;
-%             else
-%                 N_LAGS = 25;
-%             end
-% 
-%             vectors = zeros(length(files),N_LAGS);
-%             lags = [];
-%             for i=1:length(files)
-%                 filename = [path files(i).name];
-%                 load(filename);
-% 
-%                 P = pstrf_result;
-%                 lags = P.lags(1:N_LAGS);
-%                 vector_sig_acc = zeros(N_LAGS,1);
-%                 n_sigs = 0;
-%                 for j=1:length(P.eigenvalues_significance)
-%                     if P.eigenvalues_significance(j,1) == 1
-%                        vector_sig_acc = vector_sig_acc + (P.eigen_vectors(:,j)*P.eigenvalues(j));
-%                        n_sigs = n_sigs + 1;
-%                     end
-%                 end
-% 
-%                 weighted_eigen_vector = vector_sig_acc / n_sigs;
-%                 first_eigen_vector = P.eigen_vectors(:,1);
-%                 mean_beta = P.theta_mean;
-% 
-%                 % Default Scaling (i.e. NONE!)
-%                 vectors(i,:) = mean_beta;
-% 
-%                 % Scale Max to 1
-%                 % vectors(i,:) = vectors(i,:) / max(abs(vectors(i,:)));
-% 
-%                 % Scale to Unit Variance
-%                 vectors(i,:) = vectors(i,:) / std(vectors(i,:));
-%             end
-% 
-%             % get rid of nan vectors
-%             vectors = vectors(sum(isnan(vectors),2)==0,:);
-
+            
+            %% Clustering
+            
             % K-means clustering
             if strcmp(n_clusters,'auto')==1
                 ks = 2:6;
@@ -423,6 +410,8 @@ classdef RasterUtil < SuperUtil
             
             % sstress criterion prevents co-location
             [MDS_Y,stress] = mdscale(dissimilarities,2,'criterion','metricsstress');
+            
+            %% Generate Figure
 
             figure();
             
@@ -439,7 +428,7 @@ classdef RasterUtil < SuperUtil
             hold on;
             plot(ts_full,rates_full_mean,'Color',[0.3 0.3 0.3],'LineWidth',1.5);
            % hold on;
-            latency = RasterUtil.latency(pf);
+            %latency = RasterUtil.latency(pf);
             plot(ts,rates_full_mean(rate_i_min:rate_i_max),'-k','LineWidth',1.5);
             stim_freq = PFUtil.stimulusCarrierFrequency(pf);
             stim_period = round((1/stim_freq)*1000);
@@ -451,7 +440,6 @@ classdef RasterUtil < SuperUtil
             mean_rates = mean(rates_full,1);
             marker_y_offset = max_psth_y * 0.05;
             scatter([latency],[mean_rates(lat_i)-marker_y_offset],60,'^','MarkerFaceColor','r','MarkerEdgeColor','none');
-            %line([latency latency],[0 max_cluster_y],'Color',[ 0.95 0.95 0.95],'LineStyle','-');
             ylim([min_psth_y max_psth_y]);
             xlim([-100 300]);
             set(gca,'Color','w');%[0.9 0.9 0.9]);
@@ -500,7 +488,7 @@ classdef RasterUtil < SuperUtil
                 title(sprintf('K-Means Centroid #%d (n=%d)',i,sum(cluster_ix==i)));
             end
             
-            if ~isempty(best_silh)
+            if exist('best_silh','var')
                 boxtitle(sprintf('%s Post-Stimulus Response Clusters (silhouette=%.2f)',PFUtil.experName(pf),best_silh));
             else
                 boxtitle(sprintf('%s Post-Stimulus Response Clusters',PFUtil.experName(pf)));
