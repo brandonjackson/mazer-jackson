@@ -274,6 +274,14 @@ classdef AnglePlay < handle
         end
 
         function explainable_r = findExplainableVariance(AP)
+        % DEPRECATED
+        % Use RasterUtil.explainableVariance() instead
+        %
+        % NOTE:
+        % This procedure (and the one used in
+        % RasterUtil.explainableVariance() does not collapse across stroke
+        % width, which probably leads to an UNDER-ESTIMATION of the
+        % explainable variance).
 
             % Find unique stimuli, and then use indices to grab
             % responses to each unique stimulus and then average them
@@ -642,7 +650,7 @@ classdef AnglePlay < handle
             title(sprintf('Linear + AnglePlay NL Model (r^2 = %0.3f)',r_fitted^2));
         end
 
-        function [r_full, rates_observed, rates_predicted_sig] = findKernelCorrelation(AP, crossValidationRatio, varargin)
+        function r_full = findKernelCorrelation(AP, crossValidationRatio, varargin)
         % FINDKERNELCORRELATION computes prediction score using kernel
         % Cross-validation is performed by using a fraction of the data
         % (provided as the CROSSVALIDATIONRATIO, e.g. 0.9) as a training set
@@ -653,6 +661,20 @@ classdef AnglePlay < handle
         % prediction of the full kernel against itself.
         %
         % If no output arguments are provided, scatter plots are generated
+        %
+        % [r_full, rates_observed] = findKernelCorrelation(AP, crossValidationRatio, varargin)
+        %
+        %  INPUT
+        %    crossValidationRatio - % of data to use as training set [0,1]
+        %
+        %    options - specified as <'option', value> pairs:
+        %      bootstrap - get better estimate of r_full via boostrapping
+        %      sig - (BROKEN) test prediction score of significant kernel only
+        %
+        %  OUTPUT
+        %    r_full - correlation between kernel prediction and observed
+        %    rates
+        %    (figure) if no output variables assigned
         
             p = inputParser;
             addRequired(p,'AP');
@@ -661,6 +683,8 @@ classdef AnglePlay < handle
             addParameter(p,'sig',0); % test prediction score of significant kernel only
             parse(p,AP,crossValidationRatio,varargin{:});
             
+            % If bootstrap option provided then do analysis with many
+            % resamplings to better estimate r
             if p.Results.bootstrap==1
                 N_DRAWS = 100;
                 scores = zeros(N_DRAWS,1);
@@ -669,9 +693,12 @@ classdef AnglePlay < handle
                 end
                 r_full = mean(scores);
                 
+                % Plot histogram of r
                 if nargout < 1
                     figure();
                     hist(scores);
+                    title(sprintf('Kernel Performance, Bootstrapped Results (crossValidationRatio = %.2f, mean r=%.2f)',crossValidationRatio,r_full));
+                    xlabel('r');
                 end
 
                 return;
@@ -725,7 +752,7 @@ classdef AnglePlay < handle
                 axis square;
                 xlabel('Rates Predicted');
                 ylabel('Rates Observed');
-                title(sprintf('Full AnglePlay Kernel (r^2 = %0.3f)',r_full^2));
+                title(sprintf('AnglePlay Kernel Performance (r^2 = %0.3f)',r_full^2));
 
 %                 subplot(1,3,2);
 %                 scatter(rates_predicted_sig, rates_observed);

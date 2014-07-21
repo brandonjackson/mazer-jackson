@@ -100,6 +100,11 @@ classdef RasterUtil < SuperUtil
         %
         % If no output args specified then plots a scatter plot of the even
         % and odd trials, as well as a histogram of repetitions.
+        %
+        % ANGLEPLAY NOTE: This procedure does not collapse across stroke
+        % width, which probably leads to an UNDER-ESTIMATION of the
+        % explainable variance
+
             
             p = inputParser;
             addRequired(p,'pf');
