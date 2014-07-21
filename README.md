@@ -150,6 +150,8 @@ consistent range (e.g. [0,1] or [-0.5,0.5])
 `ComplexCellModel`!) must be simplified and documented ASAP. Additionally,
 I need to ensure that the ouputs of all model classes are consistent, and
 then document it, perhaps in a how-to-write-a-model guide.
+- Loaders should be passed a p2m file so that they can load the stimuli
+used in that experiment. It should also have intelligent defaults.
 - A new system for organizing analysis code is necessary, because at the
 moment it is very difficult to figure out whether code is in `RasterUtil`,
 `SuperUtil`, or `PFUtil`. For example, perhaps `SuperUtil.autocorrelogram()`
