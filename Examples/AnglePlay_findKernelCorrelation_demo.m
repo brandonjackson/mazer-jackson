@@ -1,4 +1,7 @@
-% Plot Explainable Variance Over Time
+% Find Kernel Correlation / Performance
+% How strong is the correlation between the firing rates predicted by the
+% kernel and the observed rates?
+
 AP = AnglePlay(pffind('romeo0300*curvplay'),60,100);
 
 % Panel A: Full Bootstrapped Analysis
