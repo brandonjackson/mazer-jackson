@@ -933,17 +933,17 @@ classdef STRF < handle
             end
         end
         
-        function [] = meanDeltaSTRF(stimulus,lambda,n_clusters,min_score,plot_kernels)
+        function [] = meanDeltaSTRF(path, stimulus,lambda,n_clusters,min_score,plot_kernels)
             
-            if nargin < 4
+            if nargin < 5
                 min_score = 0.1;
             end
             
-            if nargin < 5
+            if nargin < 6
                 plot_kernels = 0;
             end
             
-            path = ['/lab/results/batch_pstrf_deltas/' stimulus '/'];
+           % path = ['/lab/results/batch_pstrf_deltas/' stimulus '/'];
             if strcmp(lambda,'auto')
                 files_query = sprintf('%s*auto*.mat',path);
             else
