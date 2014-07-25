@@ -103,7 +103,8 @@ classdef RasterUtil < SuperUtil
         %
         % ANGLEPLAY NOTE: This procedure does not collapse across stroke
         % width, which probably leads to an UNDER-ESTIMATION of the
-        % explainable variance
+        % explainable variance. Please use the new
+        % AnglePlay.explainableVariance() method instead.
 
             
             p = inputParser;

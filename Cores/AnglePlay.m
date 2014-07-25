@@ -96,6 +96,7 @@ classdef AnglePlay < handle
             N_TYPES = length(AP.types); % parabola and abs
             AP.N_STIMULI = length(AP.orientations)*length(AP.coefficients)*length(AP.strokes)*N_TYPES;
             
+            % @todo find max rate some other way, findVariance is useless
             v = AP.findVariance();
             AP.max_rate = max(v.means);
             
@@ -273,85 +274,38 @@ classdef AnglePlay < handle
 %             legend(cellfun(@num2str,num2cell(out.counts_bins),'UniformOutput',0));
         end
 
-        function explainable_r = findExplainableVariance(AP)
-        % DEPRECATED
-        % Use RasterUtil.explainableVariance() instead
+        function explainable_r = explainableVariance(AP)
+        % EXPLAINABLEVARIANCE measures correlation b/w odd and even trials
+        % It returns the pearson coefficient EXPLAINABLE_R. To find the 
+        % explainable variance this should be squared.
         %
-        % NOTE:
-        % This procedure (and the one used in
-        % RasterUtil.explainableVariance() does not collapse across stroke
-        % width, which probably leads to an UNDER-ESTIMATION of the
-        % explainable variance).
+        % If no output args specified then plots a histogram showing the
+        % different variances calculated on different resamplings.
+        %
+        % NOTE: This function differs from RasterUtil.explainableVariance()
+        % in that it collapses across stroke before averaging different
+        % responses to get a kernel estimate. This leads to higher
+        % explainable variances that are much closer in line with the
+        % explained variances, leading to reasonable prediction scores.
+        % Using RasterUtil.explainableVariance often results in prediction 
+        % scores higher than 1, and in many cases as high as 3
 
-            % Find unique stimuli, and then use indices to grab
-            % responses to each unique stimulus and then average them
-            % together to create the kernel
-            [unique_stims,~,ic] = unique(AP.responses(:,2:4),'rows');
-            
-            reps = zeros(size(unique_stims,1),1);
-            odds = [];
-            evens = [];
-            odds2=[];
-            evens2=[];
-            for i=1:size(unique_stims,1)
-                matches = AP.responses(ic==i,1);
-                reps(i) = length(matches);
-                
-                stim_odds = [];
-                stim_evens = [];
-                for j=1:10
-                    if length(matches) >= (j*2)
-%                         odds = [odds; matches(2*(j-1)+1)];
-%                         evens = [evens; matches(2*(j-1)+2)];
-                        stim_odds = [stim_odds; matches(2*(j-1)+1)];
-                        stim_evens = [stim_evens; matches(2*(j-1)+2)];
-                    end
-                end
-%                 if length(matches)==3
-%                     odds = [odds;matches(1)];
-%                     evens = [evens; matches(3)];
-%                 end
-                
-                if length(matches)>1
-                    
-                    
-%                     odds = [odds;mean(stim_odds)];
-%                     evens = [evens;mean(stim_evens)];
-                    
-                    % weight stimuli with more repititions more heavily
-                    odds = [odds;repmat(mean(stim_odds),[floor(length(matches)/2) 1])];
-                    evens = [evens; repmat(mean(stim_evens),[floor(length(matches)/2) 1])];
-                    
-                    combos = nchoosek(matches,2);
-                    odds2 = [odds2;combos(:,1)];
-                    evens2 = [evens2;combos(:,2)];
-                end
+            N_DRAWS = 25;
+            N_RESPONSES = size(AP.responses,1);
+            rs = zeros(N_DRAWS,1);
+            for i=1:N_DRAWS
+            	odd_ix = randsample(N_RESPONSES,round(N_RESPONSES/2));
+                even_ix = randsample(N_RESPONSES,round(N_RESPONSES/2));
+                odd_kernel = AP.findKernel(AP.responses(odd_ix,:));
+                even_kernel = AP.findKernel(AP.responses(even_ix,:));
+                rs(i) = corr(odd_kernel(:),even_kernel(:),'rows','complete');
             end
-            
-            explainable_r = corr(odds,evens);
-            explainable_r2 = corr(odds2,evens2);
+            explainable_r = mean(rs);
             
             if nargout < 1
                 figure();
-                subplot(1,3,1);
-                scatter(odds,evens,'jitter','on','jitterAmount',2);
-                xlim([0 max(max(odds),max(evens))]);
-                ylim([0 max(max(odds),max(evens))]);
-                axis square;
-                title(sprintf('Odd and Even Reps (r^2 = %.2f)',explainable_r^2));
-                
-                subplot(1,3,2);
-                scatter(odds2,evens2,'jitter','on','jitterAmount',2);
-                xlim([0 max(max(odds2),max(evens2))]);
-                ylim([0 max(max(odds2),max(evens2))]);
-                axis square;
-                title(sprintf('All Combinations of Reps (r^2 = %.2f)',explainable_r2^2));
-                
-                subplot(1,3,3);
-                hist(reps,1:10);
-                xlim([0 11]);
-                title('Reps Histogram');
-                boxtitle([PFUtil.experName(AP.pf) ' Explainable Variance Analysis']);
+                hist(rs);
+                title(sprintf('Explainable Variance (mean r=%.2f)',explainable_r));
             end
         end
         
