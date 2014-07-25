@@ -299,7 +299,7 @@ classdef GridCurv < handle
 
                     % No More Gaps! Find stimulate_end
                     if max(GC.pf.rec(r).gaps_t > stim_start)==0
-                        [~,t] = p2mFindEvents(GC.pf,r,'stimulate_end');
+                        [~,t] = PFUtil.findEvents(GC.pf,r,'stimulate_end');
                         stim_end = t;
                     else
                         gap = find(GC.pf.rec(r).gaps_t > stim_start,1,'first');
@@ -349,8 +349,6 @@ classdef GridCurv < handle
 
                 %% Loop over each spike
                 for i=1:n_spikes
-                    
-                   
                         
                     % use offset and winsize to focus on binned data
                     t_spike = GC.pf.rec(r).spike_times(i);
