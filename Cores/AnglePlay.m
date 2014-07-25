@@ -125,13 +125,13 @@ classdef AnglePlay < handle
             responses = zeros(100000,8);
             for n = 1:length(AP.pf.rec)
                 if AP.pf.rec(n).result(1) == 'C'
-                    [~, maxt] = p2mFindEvents(AP.pf, n, 'eye_stop');
+                    [~, maxt] = PFUtil.findEvents(AP.pf, n, 'eye_stop');
                 elseif strcmp(AP.pf.rec(n).result, 'E FixBreak')
-                    [~, maxt] = p2mFindEvents(AP.pf, n, 'fix_lost');
+                    [~, maxt] = PFUtil.findEvents(AP.pf, n, 'fix_lost');
                 else
                     continue;
                 end
-                [ix, ts] = p2mFindEvents(AP.pf, n, 'frameflip');
+                [ix, ts] = PFUtil.findEvents(AP.pf, n, 'frameflip');
                 
                 for evn = 1:length(ix)
                     if ts(evn)+opt.lat+opt.winsize <= maxt
