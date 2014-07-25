@@ -321,8 +321,6 @@ classdef AnglePlay < handle
             % to assess significance of the computed kernel
             if p.Results.significant==0
                 
-                
-%                 tic; 
                 kernel = NaN([length(AP.orientations),length(AP.coefficients),length(AP.types)]);
                 
                 % Find unique stimuli, and then use indices to grab
@@ -338,23 +336,6 @@ classdef AnglePlay < handle
                     type = find(AP.types==unique_stims(i,2));
                     kernel(theta,coeff,type)=rates(i);
                 end
-%                 toc
-                
-% OLD WAY: uses nested calls to filter
-%                 tic;
-%                 kernel = zeros(length(AP.orientations),length(AP.coefficients),length(AP.types));
-%                 for theta=1:length(AP.orientations)
-%                     ori_matches = AP.filter(responses,'orientation',AP.orientations(theta));
-%                     for coeff=1:length(AP.coefficients)
-%                         coeff_matches = AP.filter(ori_matches,'coefficient',AP.coefficients(coeff));
-%                         for t=1:length(AP.types)
-%                             type_matches = AP.filter(coeff_matches,'type',AP.types(t));
-%                             rate = mean(type_matches(:,1));
-%                             kernel(theta,coeff,t) = rate;
-%                         end
-%                     end
-%                 end
-%                 toc
                 
             else
                 % Default: Bootstrap t-test
@@ -1791,11 +1772,17 @@ classdef AnglePlay < handle
         end
         
         function [] = predictionScoresOverTime(pf)
+        % PREDICTIONSCORESOVERTIME plots prediction scores over time
+        % Compares how well the AnglePlay kernel explains variance versus 
+        % the maximum amount of explainable variance for a variety of 
+        % offsets and winsizes.
+        %
+        % INPUT
+        %   pf = p2m data structure
+        %
+        % OUTPUT
+        %   (figure)
             
-%             if nargin < 2
-%                 winsize = 50;
-%             end
-%           
             winsizes = [30,50,100];
             offsets = 0:20:250;
             
