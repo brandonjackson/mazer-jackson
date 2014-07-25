@@ -1795,26 +1795,48 @@ classdef AnglePlay < handle
 %             if nargin < 2
 %                 winsize = 50;
 %             end
-%             
+%           
             winsizes = [30,50,100];
-            offsets = 0:10:250;
+            offsets = 0:20:250;
             
+            explainableVariance = zeros(length(winsizes),length(offsets));
+            explainedVariance = zeros(length(winsizes),length(offsets));
             scores = zeros(length(winsizes),length(offsets));
             
             for i=1:length(winsizes)
-                for j=1:length(offsets)
+                parfor j=1:length(offsets)
                     AP = AnglePlay(pf,offsets(j),winsizes(i));
-                    scores(i,j) = AP.findKernelCorrelation(0.9,'bootstrap',1)^2;
+                    explainableVariance(i,j) = AP.explainableVariance()^2;
+                    explainedVariance(i,j) = AP.findKernelCorrelation(0.9,'bootstrap',1)^2;
+                    scores(i,j) = explainedVariance(i,j) / explainableVariance(i,j);
                 end
             end
             
             figure();
+            subplot(2,2,1:2);
             plot(offsets,scores','-o');
             title([PFUtil.experName(pf) ' Kernel Prediction Scores']);
-            ylabel('prediction score (r^2)');
+            ylabel('prediction score (explained / explainable variance)');
+            xlabel('offset time (ms)');
+            ylim([0 max(1,max(scores(:)))]);
+            xlim([0 max(offsets)]);
+            legend(cellstr(num2str(winsizes','%d ms winsize')));
+            subplot(2,2,3);
+            plot(offsets,explainableVariance','-o');
+            title('Explainable Variance');
+            ylabel('explainable variance (r^2)');
             xlabel('offset time (ms)');
             ylim([0 1]);
+            xlim([0 max(offsets)]);
             legend(cellstr(num2str(winsizes','%d ms winsize')));
+            subplot(2,2,4);
+            plot(offsets,explainedVariance','-o');
+            title('Explained Variance');
+            ylabel('explained variance (r^2)');
+            xlabel('offset time (ms)');
+            ylim([0 1]);
+            xlim([0 max(offsets)]);
+            legend(cellstr(num2str(winsizes','%d ms winsize')));        
         end
         
         function [gr_gr_prediction_score,gr_ap_prediction_score,ap_ap_prediction_score] = gratrevModelComparison(ap_pf, ap_offset, ap_winsize, gr_pf, gr_offset, gr_winsize)
