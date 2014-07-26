@@ -67,7 +67,7 @@ classdef GratRevLoader < handle
                 stimulusParams.phase,...
                 stimulusParams.sf,...
                 1);
-            img = img / 255; % rescale from [0,255] to [0,1] range
+            img = im2double(img); % rescale from [0,255] to [0,1] range
             img = img - 0.5; % effectively demean
             
             if nargin < 3
