@@ -56,7 +56,7 @@ classdef AnglePlayLoader < SuperLoader
             img = APL.loadImage(path, rotation);
         end
         
-        function [img] = getByImageNumber(APL, inum, downsampled_size)
+        function [img] = getByImageNumber(APL, inum)
         % GETBYIMAGENUMBER loads an image based on the INUM stored
         % in the p2m file, PF.
         % NB: the inum index should be zero-based, since this is how they
@@ -71,11 +71,8 @@ classdef AnglePlayLoader < SuperLoader
             path = [APL.image_dir '/' filename];
             rotation = str2num(tokens{5});
             
-            if nargin < 4
-                img = APL.loadImage(path,rotation);
-            else
-                img = APL.loadImage(path,rotation,downsampled_size);
-            end
+            img = APL.loadImage(path,rotation);
+            
         end
         
 %         function img = getByTrigger(APL, pf, trigger)
