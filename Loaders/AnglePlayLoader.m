@@ -53,7 +53,8 @@ classdef AnglePlayLoader < SuperLoader
         
             image_i = randi([1 length(APL.image_list)]);
             path = [APL.image_dir '/' APL.image_list{image_i,1}];
-            img = APL.loadImage(path);
+            rotation = APL.oris(randi(length(APL.oris),1));
+            img = APL.loadImage(path, rotation);
         end
         
         function [img] = getByImageNumber(APL, inum, downsampled_size)
@@ -126,9 +127,6 @@ classdef AnglePlayLoader < SuperLoader
             % - undo the inversion
             % - the rotation increases the size of the image, and so it
             %   must be cropped back to normal size
-            if nargin < 3
-                rotation = APL.oris(randi(length(APL.oris),1));
-            end
             img_rotated_inverted = imrotate(img_inverted, rotation);
             
             img_rotated = imcomplement(img_rotated_inverted);
