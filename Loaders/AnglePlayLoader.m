@@ -6,14 +6,18 @@ classdef AnglePlayLoader < SuperLoader
     
     properties
         
-        file_list
+        % Directory where images are stored
         image_dir
+        
+        % List of image files
+        image_list
+        
+        % List of orientations that images are rotated by
         oris
 
     end
     
 	properties (Constant)
-        ANGLEPLAY_PATH = '/lab/stimuli/curvplay_jackson2/angles_medium';
         MAX_WIDTH = 400;
     end
     
@@ -22,25 +26,17 @@ classdef AnglePlayLoader < SuperLoader
             
             APL = APL@SuperLoader(pf); % Construct superclass
             
-            p = inputParser;
-            addParameter(p,'imagedir', 0);
-            parse(p,varargin{:});
+            APL.image_dir = APL.pf.rec(1).params.imagedir;
             
-            if p.Results.imagedir ~= 0
-                APL.image_dir = p.Results.imagedir;
-            else
-                APL.image_dir = AnglePlayLoader.ANGLEPLAY_PATH;
-            end
+            % Load list of orientations to rotate images
+            oristep = APL.pf.rec(1).params.oristep;
+            APL.oris = 0:oristep:(360-oristep);
             
-            % orientations to rotate images
-            % @todo load from p2m file
-            APL.oris = 0:45:315;
-            
+            % Load list of file names
             image_dir_struct = dir([APL.image_dir '/*.png']);
-            APL.file_list = cell(length(image_dir_struct),2);
+            APL.image_list = cell(length(image_dir_struct),1);
             for i=1:length(image_dir_struct)
-                APL.file_list{i, 1} = image_dir_struct(i).name;
-               % GL.file_list{i, 2} = sscanf(GL.file_list{i, 1},'%u-');
+                APL.image_list{i, 1} = image_dir_struct(i).name;
             end
             clear image_dir_struct;
         end
@@ -50,9 +46,8 @@ classdef AnglePlayLoader < SuperLoader
         %   RETURN img                  (uint8 matrix) grayscale image
         %   RETURN vector               (uint8 vector) orientations
         
-            image_i = randi([1 length(APL.file_list)]);
-            vector = APL.file_list{image_i,2};
-            path = [APL.image_dir '/' APL.file_list{image_i,1}];
+            image_i = randi([1 length(APL.image_list)]);
+            path = [APL.image_dir '/' APL.image_list{image_i,1}];
             img = APL.loadImage(path);
         end
         
