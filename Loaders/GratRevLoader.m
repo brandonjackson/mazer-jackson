@@ -17,6 +17,7 @@ classdef GratRevLoader < SuperLoader
         % See GratRevLoader.getByStimulusParams for details of image
         % generation.
         
+            % @todo load the stimulus space from the p2m file
             oris = 0:15:165;
             phases = [0,180];
             sfs = [1,2,4,8,16,32,64];

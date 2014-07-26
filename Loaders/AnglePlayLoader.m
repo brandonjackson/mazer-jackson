@@ -20,7 +20,6 @@ classdef AnglePlayLoader < SuperLoader
     end
     
 	properties (Constant)
-        MAX_WIDTH = 400;
     end
     
     methods
