@@ -21,7 +21,7 @@ classdef AnglePlayWriter < SuperWriter
         %    pf
 
             APW.pf = pf;
-            APW.stimulusLoader = AnglePlayLoader();
+            APW.stimulusLoader = AnglePlayLoader(pf);
         end
         
         function new_pf = writeFromModel(APW, model)

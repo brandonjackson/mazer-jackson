@@ -403,11 +403,7 @@ classdef PFUtil < SuperUtil
                 % do nothin bc this option is a computational walk in the
                 % park!
             elseif strcmp(task,'curvplay')
-                if strcmp(pf.rec(1).params.imagedir,'/auto/data/stimuli/jackson/angles_bold-0.25')
-                    APL = AnglePlayLoader('imagedir','/lab/stimuli/curvplay_jackson/angles_medium/');
-                else
-                    APL = AnglePlayLoader();
-                end
+                APL = AnglePlayLoader(pf);
                 AP = AnglePlay(pf,50,50);
                 if strcmp(p.Results.feature,'binary')
                     n_oris = length(AP.orientations);

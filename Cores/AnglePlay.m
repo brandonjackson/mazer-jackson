@@ -536,7 +536,7 @@ classdef AnglePlay < handle
         % to findModelKernel1 which compares a model against the kernel)
             
             % Stimulate Model with Each Stimuli
-            APL = AnglePlayLoader();
+            APL = AnglePlayLoader(AP.pf);
             N_STIMULI = length(AP.pf.rec(1).params.IMAGE_INFO);
             stimuli_responses = zeros(N_STIMULI,1);
             for i=1:N_STIMULI
