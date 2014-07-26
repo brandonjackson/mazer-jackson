@@ -83,7 +83,7 @@ classdef AnglePlayLoader < SuperLoader
 %             
 %         end
         
-        function img = loadImage(APL, path, rotation, downsampled_size)
+        function stimulus = loadImage(APL, path, rotation, downsampled_size)
             
             try
                 [img, map, a] = imread(path);
@@ -92,59 +92,81 @@ classdef AnglePlayLoader < SuperLoader
                 if ~isempty(map)
                     img = ind2gray(img,map);
                 end
+                
+                % Convert RGB to grayscale
+                if(length(size(img))==3)
+                    img = rgb2gray(img);
+                end
+                
             catch err
                 fprintf('path:\n%s\n',path)
                 rethrow(err);
             end
             
-            img_size = size(img);
-            if(length(img_size)==3)
-                img = double(rgb2gray(img));
-            else
-                img = double(img);
-            end
-
-            % rescale from [0,255] -> [0,1]
-            img = img / 255;
+            % Convert to double, rescale from [0,255] -> [0,1]
+            img = im2double(img); 
             
-            % resize to be MAX_WIDTH
-            if size(img,1) > APL.MAX_WIDTH
-                img = imresize(img,[APL.MAX_WIDTH, APL.MAX_WIDTH]);
-                img(img < 0) = 0; % get rid of scaling artifacts
-                img(img > 1) = 1;
-            end
-            
-            % eliminate border effects (some pixels are slightly off-white)
+            % Eliminate border effects (some pixels are slightly off-white)
             img(img > 0.9) = 1;
-            stim_w = size(img,1);
             
-            % invert image since imrotate adds zeros to in blank spaces
-            % which in an un-inverted image appear as black. we'll convert
-            % it back later...
-            img_inverted = imcomplement(img);
-            
-            % rotate the image and clean up the resulting mess
-            % - undo the inversion
-            % - the rotation increases the size of the image, and so it
-            %   must be cropped back to normal size
-            img_rotated_inverted = imrotate(img_inverted, rotation);
-            
-            img_rotated = imcomplement(img_rotated_inverted);
-            rotated_dim = size(img_rotated,1);
-            min_pad = round((rotated_dim - stim_w)/2);
-            img_rotated = img_rotated(min_pad+1:(min_pad + stim_w - 1),min_pad+1:(min_pad + stim_w - 1));
-            
-            % set background to gray, and then demean so that gray is 0
-            % effectively rescales range from [0,1] -> [0,0.5] -> [-0.5,0.5]
-            img = (img_rotated / 2);% - 0.5;
-            
-            if nargin >= 4
-                slice_w = round(size(img,2) / 2);
-                padding = round((size(img,2) - slice_w)/2);
-                img = img(padding+1:(padding+slice_w - 1),padding+1:(padding+slice_w - 1));
-                img = imresize(img,[downsampled_size, downsampled_size]);
+            % Do Some Math First!
+            % Calculate image size (size to scale the image to)
+            if APL.task_version==1
+                image_size = (10 * APL.pf.rec(1).params.rfsigma) * APL.pf.rec(1).params.ds;
+            elseif isfield(APL.pf.rec(1).params,'scale')
+                image_size = size(img,1) * APL.pf.rec(1).params.scale;
+            else
+                image_size = size(img,1);
             end
-            % @todo change color of curve based on polarity
+            
+            % Calculate stimulus size (size of final stimulus (pre-scaling))
+            stimulus_size = round(image_size * 1.5); % in theory, should be * sqrt(2) 
+            
+            % Resize the Image
+            img = imresize(img, [image_size image_size]);
+            img(img < 0) = 0; % get rid of scaling artifacts
+            img(img > 1) = 1;
+            
+            % Rotate the Image
+            % invert image (since imrotate adds zeros to in blank spaces
+            % which in an un-inverted image appear as black), rotate, and
+            % un-invert back to normal color range
+            img_inverted = imcomplement(img);
+            img_rotated_inverted = imrotate(img_inverted, rotation);
+            img_rotated = imcomplement(img_rotated_inverted);
+            
+            % Insert rotated image into big stimulus foreground frame
+            % (with padding to account for changes in size when rotated)
+            rotated_dim = size(img_rotated,1);
+            pad = round((stimulus_size - rotated_dim) / 2);
+            stimulus_fg = ones([stimulus_size,stimulus_size]);
+            stimulus_fg(pad:(pad + rotated_dim - 1),pad:(pad + rotated_dim - 1)) = img_rotated;
+                        
+            % Set background to gray, rescale from [0,1] -> [0,0.5]
+            stimulus_fg = (stimulus_fg / 2);
+            
+            % Create Gaussian Envelope, rescale so range is [0,1]
+            if APL.task_version==0
+                sigma = APL.pf.rec(1).params.sigma;
+            else
+                sigma = APL.pf.rec(1).params.rfsigma * APL.pf.rec(1).params.nsigma;
+            end
+            gaussian_envelope = fspecial('Gaussian',stimulus_size,sigma);
+            gaussian_envelope = gaussian_envelope / max(gaussian_envelope(:));
+            
+            % Create Gray Stimulus Background
+            stimulus_bg = 0.5 * ones(size(stimulus_fg));
+            
+            % Blend Stimulus Foreground + Alpha with Background
+            stimulus = gaussian_envelope.*stimulus_fg + (1-gaussian_envelope).*stimulus_bg;
+            
+%             if nargin >= 4
+%                 slice_w = round(size(img,2) / 2);
+%                 padding = round((size(img,2) - slice_w)/2);
+%                 img = img(padding+1:(padding+slice_w - 1),padding+1:(padding+slice_w - 1));
+%                 img = imresize(img,[downsampled_size, downsampled_size]);
+%             end
+%             % @todo change color of curve based on polarity
         end
 
     end
