@@ -1,4 +1,4 @@
-classdef AnglePlayLoader < handle
+classdef AnglePlayLoader < SuperLoader
     % ANGLEPLAYLOADER load AnglePlay stimuli
     %
     % @todo implement getByTrigger()
@@ -18,7 +18,9 @@ classdef AnglePlayLoader < handle
     end
     
     methods
-        function APL = AnglePlayLoader(varargin)
+        function APL = AnglePlayLoader(pf, varargin)
+            
+            APL = APL@SuperLoader(pf); % Construct superclass
             
             p = inputParser;
             addParameter(p,'imagedir', 0);

@@ -1,4 +1,4 @@
-classdef GridCurvLoader < handle
+classdef GridCurvLoader < SuperLoader
     % GRIDCURVLOADER loads gridcurv stimuli
     
     properties
@@ -11,7 +11,10 @@ classdef GridCurvLoader < handle
     end
     
     methods
-        function GCL = GridCurvLoader()
+        function GCL = GridCurvLoader(pf)
+            
+            GCL = GCL@SuperLoader(pf); % Construct superclass
+            
 %             if ~isempty(varargin.image_dir)
 %                 GCL.image_dir = varargin.image_dir;
 %             end

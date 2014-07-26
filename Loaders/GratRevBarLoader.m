@@ -1,4 +1,4 @@
-classdef GratRevBarLoader < handle
+classdef GratRevBarLoader < SuperLoader
     % GRATREVBARLOADER loads gratrev bar stimuli
     
     properties
@@ -8,8 +8,8 @@ classdef GratRevBarLoader < handle
     end
     
     methods
-        function GRBL = GratRevBarLoader()
-           
+        function GRBL = GratRevBarLoader(pf)
+           GRBL = GRBL@SuperLoader(pf); % Construct superclass
         end
         
         function [img] = randomStimulus(GRBL)
