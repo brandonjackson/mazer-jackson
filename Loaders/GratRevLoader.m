@@ -12,7 +12,7 @@ classdef GratRevLoader < SuperLoader
             GRL = GRL@SuperLoader(pf); % Construct superclass
         end
         
-        function [img] = randomStimulus(GRL, downsampled_size)
+        function [img] = randomStimulus(GRL)
         % RANDOMSTIMULUS loads a random gratrev stimulus image
         % See GratRevLoader.getByStimulusParams for details of image
         % generation.
@@ -30,23 +30,15 @@ classdef GratRevLoader < SuperLoader
             stimulusParams.sf = (round(stimulusParams.sf/stimulusParams.rmult) / stimulusParams.stimulusSize);
             stimulusParams.stype = 0; % grating
             
-            if nargin < 2
-                img = GRL.getByStimulusParams(stimulusParams);
-            else
-                img = GRL.getByStimulusParams(stimulusParams, downsampled_size);
-            end
+            img = GRL.getByStimulusParams(stimulusParams);
         end
         
-        function [img] = getByTrigger(GRL, pf, trigger, downsampled_size)
+        function [img] = getByTrigger(GRL, pf, trigger)
             stimulusParams = GratRevUtil.trigger2stimulusParams(pf, trigger);
-            if nargin < 4
-                img = GRL.getByStimulusParams(stimulusParams);
-            else
-                img = GRL.getByStimulusParams(stimulusParams, downsampled_size);
-            end
+            img = GRL.getByStimulusParams(stimulusParams);
         end
         
-        function [img] = getByStimulusParams(GRL, stimulusParams, downsampled_size)
+        function [img] = getByStimulusParams(GRL, stimulusParams)
         % GETBYSTIMULUSPARAMS loads a grating image based on the details in
         % STIMULUSPARAMS. The STIMULUSPARAMS struct can be derived from the
         % ev_e triggers using the GratRevUtil.trigger2stimulusParams()
@@ -58,7 +50,7 @@ classdef GratRevLoader < SuperLoader
         %   - phase             (double) phase
         %   - sf                (double) spatial frequency, in cycles/pixel
         %
-        % IMG is a double in the range [-0.5, 0.5]
+        % IMG is a double in the range [0,1]
             
             radius = stimulusParams.stimulusSize / 2; % @todo make sure this is an even number
             img = mkgrating(radius,...
@@ -67,22 +59,15 @@ classdef GratRevLoader < SuperLoader
                 stimulusParams.phase,...
                 stimulusParams.sf,...
                 1);
-            img = im2double(img); % rescale from [0,255] to [0,1] range
-            img = img - 0.5; % effectively demean
+            img = img / 255; % rescale from [0,255] to [0,1] range
             
-            if nargin < 3
-                % create circular mask
-                circle_x = radius;
-                circle_y = radius;
-                circle_radius = radius;
-                [circle_xx,circle_yy] = ndgrid((1:size(img,1))-circle_x,(1:size(img,2))-circle_y);
-                mask = (circle_xx.^2 + circle_yy.^2) < circle_radius^2;
-                img = img .* mask;
-            
-            % Downsample image
-            else
-                img = imresize(img,[downsampled_size, downsampled_size]);
-            end
+            % create circular mask
+            circle_x = radius;
+            circle_y = radius;
+            circle_radius = radius;
+            [circle_xx,circle_yy] = ndgrid((1:size(img,1))-circle_x,(1:size(img,2))-circle_y);
+            mask = (circle_xx.^2 + circle_yy.^2) < circle_radius^2;
+            img = ((img - 0.5) .* mask + 0.5);
         end
     end
 end
