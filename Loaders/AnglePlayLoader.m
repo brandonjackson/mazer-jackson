@@ -83,7 +83,7 @@ classdef AnglePlayLoader < SuperLoader
 %             
 %         end
         
-        function stimulus = loadImage(APL, path, rotation, downsampled_size)
+        function stimulus = loadImage(APL, path, rotation)
             
             try
                 [img, map, a] = imread(path);
@@ -160,13 +160,7 @@ classdef AnglePlayLoader < SuperLoader
             % Blend Stimulus Foreground + Alpha with Background
             stimulus = gaussian_envelope.*stimulus_fg + (1-gaussian_envelope).*stimulus_bg;
             
-%             if nargin >= 4
-%                 slice_w = round(size(img,2) / 2);
-%                 padding = round((size(img,2) - slice_w)/2);
-%                 img = img(padding+1:(padding+slice_w - 1),padding+1:(padding+slice_w - 1));
-%                 img = imresize(img,[downsampled_size, downsampled_size]);
-%             end
-%             % @todo change color of curve based on polarity
+            % @todo change color of curve based on polarity
         end
 
     end
