@@ -15,6 +15,8 @@ classdef AnglePlayLoader < SuperLoader
         % List of orientations that images are rotated by
         oris
 
+        % Task Version (0==old, 1==new)
+        task_version
     end
     
 	properties (Constant)
@@ -39,6 +41,9 @@ classdef AnglePlayLoader < SuperLoader
                 APL.image_list{i, 1} = image_dir_struct(i).name;
             end
             clear image_dir_struct;
+            
+            % Determine whether old or new version of task used
+            APL.task_version = AnglePlayUtil.taskVersion(APL.pf);
         end
         
         function [img] = randomStimulus(APL)

@@ -11,7 +11,7 @@ classdef AnglePlay < handle
         % p2m file
         pf
         
-        % curvplay task version number
+        % curvplay task version (0==old, 1==new)
         task_version
         
         % latency
@@ -82,9 +82,7 @@ classdef AnglePlay < handle
             AP.params = AP.pf.rec(1).params;
             AP.imagedir = AP.params.imagedir;
             
-            version_str = strjoin(AP.params.X_version_info);
-            version_match = regexp(version_str,'curvplay.py\s(\d*)','tokens');
-            AP.task_version = str2double(strjoin(version_match{:}));
+            AP.task_version = AnglePlayUtil.taskVersion(AP.pf);
                         
             AP.responses = AP.findResponses(latency, winsize);
             
@@ -1461,7 +1459,7 @@ classdef AnglePlay < handle
                 padding = (AP.stimulusSize - (AP.stimulusSize * AP.slice_fraction)) / 2;
                 
                 % calculate position of rounded rectangle showing RF sigma
-                if AP.task_version < 938
+                if AP.task_version == 0
                     rf_pos = [(AP.stimulusSize/6) - padding, (AP.stimulusSize/6)-padding, ((2*AP.stimulusSize)/3), ((2*AP.stimulusSize)/3)];
                     rf_color = [1,1,1];
                     rf_style = ':';
@@ -1505,7 +1503,7 @@ classdef AnglePlay < handle
                     
                     % Add Gaussian Envelope in the Alpha Channel
                     % Gaussian calculated w/ sigma = nsigma * rf_sigma
-                    if AP.task_version >= 938
+                    if AP.task_version == 1
                         MIN_OPACITY = 0.01; % when == 0, plot fades to white
                         GAUSSIAN_MULTIPLIER = 1.5; % makes a broader region be fully visible
                         
