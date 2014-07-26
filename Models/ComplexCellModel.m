@@ -3,15 +3,21 @@ classdef ComplexCellModel < SuperModel
     
     properties
 
-        orientation
+        ori
         
-        gabor_params
+        wavelength
+        
+        sigma
+        
+        phase
+        
+        aspect
         
         nonlinearities
                 
-        x_offset
+      %  x_offset
         
-        y_offset
+     %   y_offset
         
         SC1
         
@@ -29,7 +35,7 @@ classdef ComplexCellModel < SuperModel
     
     methods
 
-        function CX = ComplexCellModel(args)
+        function CX = ComplexCellModel(args, loader)
         % COMPLEXCELLMODEL constructs a new model object.
         % This constructor creates two simple cell subunits. It requires
         % multiple args, which are listed below.
@@ -47,20 +53,33 @@ classdef ComplexCellModel < SuperModel
         %       fit
         %       cacheEnabled
         %       subunitAlgorithm
+       
+            if nargin < 2
+                loader = [];
+                %warning('no stimulus loader provided');
+            else
+                CX.setStimulusLoader(loader);
+            end
+                
 
             % Define orientation and offsets
-            CX.orientation = args.orientation;
-            CX.gabor_params = args.gabor_params;
-            CX.x_offset = args.x_offset;
-            CX.y_offset = args.y_offset;
-            CX.setStimulusLoader(args.stimulusLoader);
+            CX.ori = args.ori;
+            CX.wavelength = args.wavelength;
+            CX.sigma = args.sigma;
+            CX.phase = args.phase;
+            CX.aspect = args.aspect;
+            %CX.x_offset = args.x_offset;
+            %CX.y_offset = args.y_offset;
+            
             CX.nonlinearities = args.nonlinearities;
             CX.cacheEnabled = args.cacheEnabled;
             CX.subunitInputType = args.subunitInputType;
             
+            
+            
             % Simple Cell 1
             SC1_args = CX.getSimpleCellArgs('phase',0);
-            CX.SC1 = SimpleCellModel(SC1_args);
+            CX.SC1 = SimpleCellModel(SC1_args, loader);
             
             % Save Nonlinearities For Later
             CX.nonlinearities.sc_a = CX.SC1.nonlinearities.sc_a;
@@ -68,7 +87,7 @@ classdef ComplexCellModel < SuperModel
 
             % Simple Cell 2
             SC2_args = CX.getSimpleCellArgs('phase',pi/2);
-            CX.SC2 = SimpleCellModel(SC2_args);
+            CX.SC2 = SimpleCellModel(SC2_args, loader);
             
             if ~isfield(args,'fit') || args.fit==1
                 CX.fit();
@@ -190,6 +209,8 @@ classdef ComplexCellModel < SuperModel
         % OUTPUTS
         %   a
         %   b
+        %
+        % CURRENTLY BROKEN!
             N_STIMULI = 2000;
             N_POSITIONS = 1;
             IDEAL_RATE = 40;
@@ -249,10 +270,13 @@ classdef ComplexCellModel < SuperModel
         
         function [SC_args] = getSimpleCellArgs(CX, varargin)
             SC_args = {};
-            SC_args.orientation = CX.orientation;
-            SC_args.gabor_params = CX.gabor_params;
-            SC_args.x_offset = CX.x_offset;
-            SC_args.y_offset = CX.y_offset;
+            SC_args.ori = CX.ori;
+            SC_args.wavelength = CX.wavelength;
+            SC_args.sigma = CX.sigma;
+            SC_args.phase = CX.phase;
+            SC_args.aspect = CX.aspect;
+            %SC_args.x_offset = CX.x_offset;
+            %SC_args.y_offset = CX.y_offset;
             SC_args.stimulusLoader = CX.stimulusLoader;
             SC_args.stimulusSize = CX.stimulusSize;
             SC_args.nonlinearities = CX.nonlinearities;   
@@ -278,22 +302,16 @@ classdef ComplexCellModel < SuperModel
             colorbar();
             caxis([-1 1]);
             title('SC2 Kernel');
-            boxtitle(sprintf('CX Kernel \\lambda = %dpx, \\sigma = %dpx', CX.gabor_params.wavelength, CX.gabor_params.sigma));
+            boxtitle(sprintf('CX Kernel \\lambda = %dpx, \\sigma = %dpx', CX.wavelength, CX.sigma));
         end
     end
     
     methods (Static)
         
         function [] = plotQuickKernel(ori, wavelength, sigma)
-            gabor_params = {};
-            gabor_params.theta = ori;
-            gabor_params.wavelength = wavelength;
-            gabor_params.sigma = sigma;
-            gabor_params.kernel_size = max(164,wavelength);
-            gabor_params.aspect = 1;
             
-            gb1 = gabor_filter(gabor_params);
-            gb2 = gabor_filter(gabor_params,'phase',pi/2);
+            gb1 = GaborUtil.createFilter(ori, wavelength, sigma, 0);
+            gb2 = GaborUtil.createFilter(ori, wavelength, sigma, pi/2);
             
             figure();
             subplot(1,2,1);
@@ -308,7 +326,7 @@ classdef ComplexCellModel < SuperModel
             colorbar();
             caxis([-1 1]);
             title('SC2 Kernel');
-            boxtitle(sprintf('CX Kernel \\lambda = %dpx, \\sigma = %dpx', gabor_params.wavelength, gabor_params.sigma));
+            boxtitle(sprintf('CX Kernel \\lambda = %dpx, \\sigma = %dpx', wavelength, sigma));
             
         end
         

@@ -3,12 +3,16 @@ classdef SimpleCellModel < SuperModel
     
     properties
 
-        orientation
+        ori
+        
+        wavelength
+        
+        sigma
         
         phase
         
-        gabor_params
-        
+        aspect
+                
         fullwaverectify
         
         nonlinearities
@@ -36,7 +40,7 @@ classdef SimpleCellModel < SuperModel
     end
     
     methods
-        function [ SC ] = SimpleCellModel(args)
+        function [ SC ] = SimpleCellModel(args, loader)
         % SIMPLECELLMODEL constructs a new model object.
         % This constructor creates two simple cell subunits. It requires
         % multiple args, which are listed below.
@@ -51,14 +55,24 @@ classdef SimpleCellModel < SuperModel
         %       stimulusSize
         %       x_offset
         %       y_offset
+        
+            if nargin < 2 || isempty(loader)
+                loader = [];
+               %warning('no stimulus loader provided');
+            else
+                SC.setStimulusLoader(loader);
+            end
 
-            SC.orientation = args.orientation;
+            SC.ori = args.ori;
+            SC.wavelength = args.wavelength;
+            SC.sigma = args.sigma;
             SC.phase = args.phase;
-            SC.gabor_params = args.gabor_params;
+            SC.aspect = args.aspect;
             SC.nonlinearities = args.nonlinearities;
-            SC.setStimulusLoader(args.stimulusLoader);
-            SC.x_offset = args.x_offset;
-            SC.y_offset = args.y_offset;
+            SC.x_offset = 0;
+            SC.y_offset = 0;
+            
+            
 
             if ~isfield(args,'fullwaverectify')
                 SC.fullwaverectify = 0;
@@ -73,9 +87,11 @@ classdef SimpleCellModel < SuperModel
             end
 
             % Create Filter
-            gabor = gabor_filter(args.gabor_params,'phase',args.phase,'theta',args.orientation);
+            gabor = GaborUtil.createFilter(args.ori, args.wavelength, args.sigma, args.phase, args.aspect);
+            %gabor = gabor_filter(args.gabor_params,'phase',args.phase,'theta',args.orientation);
+            SC.kernel = gabor;
             
-            [SC.kernel,SC.kernel_pos] = gabor_filter_translate(gabor, args.stimulusSize, args.x_offset, args.y_offset);
+            %[SC.kernel,SC.kernel_pos] = gabor_filter_translate(gabor, args.stimulusSize, args.x_offset, args.y_offset);
             
             if SC.nonlinearities.sc_a==1 && SC.nonlinearities.sc_b==0
                 SC.fit();
@@ -100,7 +116,7 @@ classdef SimpleCellModel < SuperModel
 
             % Output variable
             OUT = {};
-          %  SC.stimulusSize
+            
             SC.stimulusSize = size(stimulus);
 
             % Grab stimulus frame and convolve with kernel
@@ -108,36 +124,26 @@ classdef SimpleCellModel < SuperModel
                 kernel_size = size(SC.kernel);
 
                 if isequal(SC.stimulusSize,kernel_size)
-                    kernel = SC.kernel;
+                    % Do nothing, we're all set!
                 
-                % stimulus smaller than kernel
+                % Stimulus smaller than kernel: add padding to stimulus so
+                % that it is the same size as the kernel
                 elseif SC.stimulusSize(1) < kernel_size(1)
                     pad = round((kernel_size(1) - SC.stimulusSize(1)) / 2);
                     stimulus_padded = zeros(kernel_size) + 0.5;
                     stimulus_padded((pad+1):(SC.stimulusSize(1)+pad),(pad+1):(SC.stimulusSize(1)+pad)) = stimulus;
                     stimulus = stimulus_padded;
-                    kernel = SC.kernel;
                 
-                % stimulus bigger than kernel
+                % Stimulus bigger than kernel: cut out slice of stimulus
+                % that is the size of the kernel
                 else
-                    origin = SC.stimulusSize/2;
-                    left = origin(2) - floor(kernel_size(2)/2);
-                    right = origin(2) + floor(kernel_size(2)/2);
-                    top = origin(1) - floor(kernel_size(1)/2);
-                    bottom = origin(1) + floor(kernel_size(1)/2);
-                    kernel = zeros(SC.stimulusSize);
-                    kernel(left:right,top:bottom) = SC.kernel;
+                    margin = round((SC.stimulusSize(1) - kernel_size) / 2);
+                    stimulus = stimulus(margin:(kernel_size(1)+margin-1),margin:(kernel_size(2)+margin-1));
                 end
 
-                OUT.final_kernel = kernel;
+                OUT.final_kernel = SC.kernel;
 
-                % only convolve with the relevant slice of the stimulus
-                % kernel_pos is [x1 x2 y1 y2] of slice
-                x_slice = SC.kernel_pos(1):SC.kernel_pos(2);
-                y_slice = SC.kernel_pos(3):SC.kernel_pos(4);
-                kernel_slice = kernel(x_slice,y_slice);
-                stimulus_slice = stimulus(x_slice,y_slice);
-                OUT.response = kernel_slice .* double(stimulus_slice);
+                OUT.response = SC.kernel .* double(stimulus);
 
                 % Save Sum
                 OUT.response_sum = sum(OUT.response(:));
@@ -187,6 +193,8 @@ classdef SimpleCellModel < SuperModel
         %
         % PARAMS
         %   image_dir
+        %
+        % CURRENTLY BROKEN!
 
             N_STIMULI = 2000;
             N_POSITIONS = 1;
