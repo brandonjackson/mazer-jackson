@@ -44,7 +44,7 @@ classdef GratRevBarLoader < SuperLoader
         %   - phase             (double) phase
         %   - sf                (double) bar width, in px
         %
-        % IMG is a double in the range [-0.5, 0.5]
+        % IMG is a double in the range [0,1]
             img = zeros(stimulusParams.stimulusSize,'double');
             width = stimulusParams.sf;
             center = stimulusParams.stimulusSize / 2;
@@ -60,8 +60,16 @@ classdef GratRevBarLoader < SuperLoader
             % Then shift to center
             img = circshift(img,[0 round(center - (width/2))]);
             
-            % Finally, rotate
+            % Rotate
             img = imrotate(img,stimulusParams.ori,'bilinear','crop');
+            
+            % Add 0.5, so that image range is [0,1]
+            % Note: the range was [-0.5,0.5] before so that when the image
+            % was rotated the pixels added in the corner had the background
+            % color of 0
+            img = img + 0.5; 
+            
+            % @todo add gaussian envelope?
         end
     end
 end
