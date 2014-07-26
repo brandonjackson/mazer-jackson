@@ -56,14 +56,14 @@ classdef AnglePlayLoader < SuperLoader
             img = APL.loadImage(path);
         end
         
-        function [img] = getByImageNumber(APL, pf, inum, downsampled_size)
+        function [img] = getByImageNumber(APL, inum, downsampled_size)
         % GETBYIMAGENUMBER loads an image based on the INUM stored
         % in the p2m file, PF.
         % NB: the inum index should be zero-based, since this is how they
         % are stored in the p2m file ev_e entry
         
             % load image info from p2m file,
-            image_info = pf.rec(1).params.IMAGE_INFO{inum + 1};
+            image_info = APL.pf.rec(1).params.IMAGE_INFO{inum + 1};
             
             % tokenize image info, extracting rotation and filename
             tokens = strsplit(image_info,[char(9) ' ']); % split by tab+space
