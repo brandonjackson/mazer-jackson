@@ -39,9 +39,9 @@ classdef GratRevUtil < SuperUtil
         % GETSTIMULUSLOADER set up stimulus loader of type bar or grating
         % Works by looking at the stimulus type parameter in the pf file
             if GratRevUtil.isGrating(pf)
-                stimulusLoader = GratRevLoader();
+                stimulusLoader = GratRevLoader(pf);
             else
-                stimulusLoader = GratRevBarLoader();
+                stimulusLoader = GratRevBarLoader(pf);
             end
         end
         
