@@ -396,8 +396,8 @@ classdef GratRevFitter < handle
             wavelength = x(2);
             sigma = x(3);
             
-            load CX_fit_args;
-            load gratrev_stimulus_space;
+            load('Variables/CX_fit_args');
+            load('Variables/gratrev_stimulus_space');
             
             CX_fit_args.orientation = ori;
             CX_fit_args.gabor_params.wavelength = wavelength;
@@ -438,8 +438,8 @@ classdef GratRevFitter < handle
             wavelength = x(2);
             sigma = x(3);
             
-            load CX_fit_args;
-            load gratrev_stimulus_space;
+            load('Variables/CX_fit_args');
+            load('Variables/gratrev_stimulus_space');
             
             CX_fit_args.orientation = ori;
             CX_fit_args.gabor_params.wavelength = wavelength;
@@ -472,8 +472,8 @@ classdef GratRevFitter < handle
             a = x(4);
             b = x(5);
             
-            load CX_fit_args;
-            load gratrev_stimulus_space;
+            load('Variables/CX_fit_args');
+            load('Variables/gratrev_stimulus_space');
             
             CX_fit_args.orientation = ori;
             CX_fit_args.gabor_params.wavelength = wavelength;

@@ -1842,8 +1842,8 @@ classdef AnglePlay < handle
             ap_ap_prediction_score = ap_ap_r_squared / ap_explainable_var;
             
             % Use Gratrev Model on AnglePlay
-            load CX_fit_args;
-            load gratrev_stimulus_space;
+            load('Variables/CX_fit_args');
+            load('Variables/gratrev_stimulus_space');
             CX_fit_args.orientation = gr_modelfit_results.ori;
             CX_fit_args.gabor_params.wavelength = gr_modelfit_results.wavelength;
             CX_fit_args.gabor_params.sigma = gr_modelfit_results.sigma;
