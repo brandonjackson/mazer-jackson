@@ -396,14 +396,14 @@ classdef GratRevFitter < handle
             wavelength = x(2);
             sigma = x(3);
             
-            load('Variables/CX_fit_args');
+            load('Variables/ComplexCellModelArgs');
             load('Variables/gratrev_stimulus_space');
             
-            CX_fit_args.orientation = ori;
-            CX_fit_args.gabor_params.wavelength = wavelength;
-            CX_fit_args.gabor_params.sigma = sigma;
+            ComplexCellModelArgs.ori = ori;
+            ComplexCellModelArgs.wavelength = wavelength;
+            ComplexCellModelArgs.sigma = sigma;
             
-            CX = ComplexCellModel(CX_fit_args);
+            CX = ComplexCellModel(ComplexCellModelArgs);
             
             %% Generate xdata by Stimulating Model with Stimuli
             xdata = zeros(length(stimuli),1);
@@ -438,14 +438,14 @@ classdef GratRevFitter < handle
             wavelength = x(2);
             sigma = x(3);
             
-            load('Variables/CX_fit_args');
+            load('Variables/ComplexCellModelArgs');
             load('Variables/gratrev_stimulus_space');
             
-            CX_fit_args.orientation = ori;
-            CX_fit_args.gabor_params.wavelength = wavelength;
-            CX_fit_args.gabor_params.sigma = sigma;
+            ComplexCellModelArgs.ori = ori;
+            ComplexCellModelArgs.wavelength = wavelength;
+            ComplexCellModelArgs.sigma = sigma;
             
-            CX = ComplexCellModel(CX_fit_args);
+            CX = ComplexCellModel(ComplexCellModelArgs);
             
             %% Generate xdata by Stimulating Model with Stimuli
             xdata = zeros(length(stimuli),1);
@@ -464,6 +464,10 @@ classdef GratRevFitter < handle
       end
       
       function fitdata = fitComplexCellObjective2(x, xdata)
+      % CURRENTLY BROKEN!
+      % CX.stimulate() can only be called without a stimulus if a stimulus
+      % loader is provided, but it isn't in this case
+      
             % f = @(x,xdata)x(1)*xdata.^x(2)+x(3);
             
             ori = x(1);
@@ -472,14 +476,14 @@ classdef GratRevFitter < handle
             a = x(4);
             b = x(5);
             
-            load('Variables/CX_fit_args');
+            load('Variables/ComplexCellModelArgs');
             load('Variables/gratrev_stimulus_space');
             
-            CX_fit_args.orientation = ori;
-            CX_fit_args.gabor_params.wavelength = wavelength;
-            CX_fit_args.gabor_params.sigma = sigma;
+            ComplexCellModelArgs.ori = ori;
+            ComplexCellModelArgs.wavelength = wavelength;
+            ComplexCellModelArgs.sigma = sigma;
             
-            CX = ComplexCellModel(CX_fit_args);
+            CX = ComplexCellModel(ComplexCellModelArgs);
             
             oriResponses = zeros(length(sfList),length(oriList));
             sfResponses = zeros(length(oriList),length(sfList));

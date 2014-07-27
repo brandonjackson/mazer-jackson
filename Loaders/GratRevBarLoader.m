@@ -1,34 +1,35 @@
-classdef GratRevBarLoader < handle
+classdef GratRevBarLoader < SuperLoader
     % GRATREVBARLOADER loads gratrev bar stimuli
     
     properties
+        % Lists storing the stimulus parameter space
+        oris
+        sfs     % bar widths in pixels
+        phases
     end
     
 	properties (Constant)
     end
     
     methods
-        function GRBL = GratRevBarLoader()
+        function GRBL = GratRevBarLoader(pf)
+           GRBL = GRBL@SuperLoader(pf); % Construct superclass
            
+           % Get stimulus space so we can generate the correct random stimuli
+           [GRBL.oris, GRBL.sfs, GRBL.phases] = GratRevUtil.getStimulusSpace(GRBL.pf);
         end
         
         function [img] = randomStimulus(GRBL)
         % RANDOMSTIMULUS loads a random gratrev stimulus image
         % See GratRevLoader.getByStimulusParams for details of image
-        % generation.
-        
-            oris = 0:15:165;
-            phases = [0,180];
-            sfs = [1,2,4,8,16,32,64]; % nb: width in pixels
-            
+        % generation.            
             stimulusParams = {};
             stimulusParams.rmult = 1;
-            stimulusParams.stimulusSize = 164;
-            stimulusParams.ori = oris(randi(length(oris)));
-            stimulusParams.phase = phases(randi(length(phases)));
-            stimulusParams.sf = sfs(randi(length(sfs)));
+            stimulusParams.stimulusSize = GratRevUtil.getStimulusSize(GRBL.pf);
+            stimulusParams.ori = GRBL.oris(randi(length(GRBL.oris)));
+            stimulusParams.phase = GRBL.phases(randi(length(GRBL.phases)));
+            stimulusParams.sf = GRBL.sfs(randi(length(GRBL.sfs)));
             stimulusParams.stype = 1; % bar
-            
             img = GRBL.getByStimulusParams(stimulusParams);
         end
         
@@ -44,7 +45,7 @@ classdef GratRevBarLoader < handle
         %   - phase             (double) phase
         %   - sf                (double) bar width, in px
         %
-        % IMG is a double in the range [-0.5, 0.5]
+        % IMG is a double in the range [0,1]
             img = zeros(stimulusParams.stimulusSize,'double');
             width = stimulusParams.sf;
             center = stimulusParams.stimulusSize / 2;
@@ -60,8 +61,16 @@ classdef GratRevBarLoader < handle
             % Then shift to center
             img = circshift(img,[0 round(center - (width/2))]);
             
-            % Finally, rotate
+            % Rotate
             img = imrotate(img,stimulusParams.ori,'bilinear','crop');
+            
+            % Add 0.5, so that image range is [0,1]
+            % Note: the range was [-0.5,0.5] before so that when the image
+            % was rotated the pixels added in the corner had the background
+            % color of 0
+            img = img + 0.5; 
+            
+            % @todo add gaussian envelope?
         end
     end
 end

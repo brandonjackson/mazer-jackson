@@ -41,6 +41,22 @@ classdef AnglePlayUtil < SuperUtil
             stimulusLoader = AnglePlayLoader();
         end
         
+        function version = taskVersion(pf)
+        % TASKVERSION determines whether old or new version of task was
+        % used
+        %
+        % The function grabs the revision of the tasks repo that was used
+        % when the pf was recorded.
+        %
+        % Output:
+        %   version - 0 if old version, 1 if new version
+        
+            version_str = strjoin(pf.rec(1).params.X_version_info);
+            version_match = regexp(version_str,'curvplay.py\s(\d*)','tokens');
+            revision_number = str2double(strjoin(version_match{:}));
+            version = ~(revision_number < 938);
+        end
+        
         function stimulusParams =  trigger2stimulusParams(pf, trigger)
         %% Extract the stimuli associated with each ev_e trigger
         % Input: 

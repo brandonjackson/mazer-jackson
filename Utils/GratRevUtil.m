@@ -35,13 +35,39 @@ classdef GratRevUtil < SuperUtil
             stimulusSize = (2 * pf.rec(1).params.radius + pf.rec(1).params.taper);
         end
         
+        function [oris,sfs,phases] = getStimulusSpace(pf)
+        % GETSTIMULUSSPACE extracts lists of stimulus features (ORIS, SFS,
+        % PHASES) from a p2m file PF
+        
+            oris = [];
+            sfs = [];
+            phases = [];
+            
+            % Get raster and unique triggers
+            raster = prast(pf);
+            triggers = unique(raster.triggers);
+            
+            % Grab params for each unique trigger
+            for i=1:length(triggers)
+                stimulusParams = GratRevUtil.trigger2stimulusParams(pf,triggers{i});
+                oris = [oris; stimulusParams.ori];
+                sfs = [sfs; stimulusParams.sf];
+                phases = [phases; stimulusParams.phase];
+            end
+            
+            % Get rid of duplicates
+            oris = unique(oris);
+            sfs = unique(sfs);
+            phases = unique(phases);
+        end
+        
         function stimulusLoader = getStimulusLoader(pf)
         % GETSTIMULUSLOADER set up stimulus loader of type bar or grating
         % Works by looking at the stimulus type parameter in the pf file
             if GratRevUtil.isGrating(pf)
-                stimulusLoader = GratRevLoader();
+                stimulusLoader = GratRevLoader(pf);
             else
-                stimulusLoader = GratRevBarLoader();
+                stimulusLoader = GratRevBarLoader(pf);
             end
         end
         

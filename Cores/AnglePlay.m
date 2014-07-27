@@ -11,7 +11,7 @@ classdef AnglePlay < handle
         % p2m file
         pf
         
-        % curvplay task version number
+        % curvplay task version (0==old, 1==new)
         task_version
         
         % latency
@@ -82,9 +82,7 @@ classdef AnglePlay < handle
             AP.params = AP.pf.rec(1).params;
             AP.imagedir = AP.params.imagedir;
             
-            version_str = strjoin(AP.params.X_version_info);
-            version_match = regexp(version_str,'curvplay.py\s(\d*)','tokens');
-            AP.task_version = str2double(strjoin(version_match{:}));
+            AP.task_version = AnglePlayUtil.taskVersion(AP.pf);
                         
             AP.responses = AP.findResponses(latency, winsize);
             
@@ -536,11 +534,11 @@ classdef AnglePlay < handle
         % to findModelKernel1 which compares a model against the kernel)
             
             % Stimulate Model with Each Stimuli
-            APL = AnglePlayLoader();
+            APL = AnglePlayLoader(AP.pf);
             N_STIMULI = length(AP.pf.rec(1).params.IMAGE_INFO);
             stimuli_responses = zeros(N_STIMULI,1);
             for i=1:N_STIMULI
-                stimulus = APL.getByImageNumber(AP.pf, i-1);
+                stimulus = APL.getByImageNumber(i-1);
                 response = model.stimulate(stimulus);
                 stimuli_responses(i) = response.subunit_sum;
             end
@@ -548,7 +546,7 @@ classdef AnglePlay < handle
             % Generate Observed and Predicted Response Vectors
             rates_observed = AP.responses(:,1);
             vm_predicted = zeros(size(rates_observed));
-            for i=1:AP.responses           
+            for i=1:length(vm_predicted)
                 inum = AP.responses(i,8);
                 vm_predicted(i) = stimuli_responses(inum + 1); % switch from 0- to 1-based indexing
             end
@@ -1461,7 +1459,7 @@ classdef AnglePlay < handle
                 padding = (AP.stimulusSize - (AP.stimulusSize * AP.slice_fraction)) / 2;
                 
                 % calculate position of rounded rectangle showing RF sigma
-                if AP.task_version < 938
+                if AP.task_version == 0
                     rf_pos = [(AP.stimulusSize/6) - padding, (AP.stimulusSize/6)-padding, ((2*AP.stimulusSize)/3), ((2*AP.stimulusSize)/3)];
                     rf_color = [1,1,1];
                     rf_style = ':';
@@ -1505,7 +1503,7 @@ classdef AnglePlay < handle
                     
                     % Add Gaussian Envelope in the Alpha Channel
                     % Gaussian calculated w/ sigma = nsigma * rf_sigma
-                    if AP.task_version >= 938
+                    if AP.task_version == 1
                         MIN_OPACITY = 0.01; % when == 0, plot fades to white
                         GAUSSIAN_MULTIPLIER = 1.5; % makes a broader region be fully visible
                         
@@ -1832,28 +1830,34 @@ classdef AnglePlay < handle
             gr_explainable_var = RasterUtil.explainableVariance(gr_pf,gr_offset,gr_winsize)^2;
             GRF = GratRevFitter(gr_pf,gr_offset,gr_winsize);
             gr_modelfit_results = GRF.fitComplexCellSimpleGA();
-            gr_gr_r_squared = gr_modelfit_results.corr;
+            gr_gr_r_squared = gr_modelfit_results.corr^2;
             gr_gr_prediction_score = gr_gr_r_squared / gr_explainable_var;
                         
             % AnglePlay Kernel
             AP = AnglePlay(ap_pf,ap_offset,ap_winsize);
-            ap_explainable_var = RasterUtil.explainableVariance(ap_pf,ap_offset,ap_winsize)^2;
+            APL = AnglePlayLoader(ap_pf);
+            ap_explainable_var = AP.explainableVariance()^2;
             ap_ap_r_squared = AP.findKernelCorrelation(0.9,'bootstrap',1)^2;
             ap_ap_prediction_score = ap_ap_r_squared / ap_explainable_var;
             
             % Use Gratrev Model on AnglePlay
-            load('Variables/CX_fit_args');
+            load('Variables/ComplexCelLModelArgs');
             load('Variables/gratrev_stimulus_space');
-            CX_fit_args.orientation = gr_modelfit_results.ori;
-            CX_fit_args.gabor_params.wavelength = gr_modelfit_results.wavelength;
-            CX_fit_args.gabor_params.sigma = gr_modelfit_results.sigma;
-            CX = ComplexCellModel(CX_fit_args);
+            ComplexCellModelArgs.ori = gr_modelfit_results.ori;
+            ComplexCellModelArgs.wavelength = gr_modelfit_results.wavelength;
+            ComplexCellModelArgs.sigma = gr_modelfit_results.sigma;
+            CX = ComplexCellModel(ComplexCellModelArgs, APL);
             [~, gr_ap_rates_observed, gr_ap_rates_predicted] = AP.findModelKernel2(CX);
             gr_ap_r_squared = corr(gr_ap_rates_observed, gr_ap_rates_predicted)^2;
             gr_ap_prediction_score = gr_ap_r_squared / ap_explainable_var;
             
             figure();
-            bar([gr_gr_prediction_score,gr_ap_prediction_score,ap_ap_prediction_score]);
+            scores = [gr_gr_prediction_score,gr_ap_prediction_score,ap_ap_prediction_score];
+            bar(scores);
+            ylim([0 max(1,max(scores))]);
+            set(gca,'XTickLabel',{'GR/GR','GR/AP','AP/AP'});
+            ylabel('prediction score (explained / explainable variance)');
+            title([PFUtil.experName(ap_pf) ' Gratrev / AnglePlay Model Comparison']);
         end
         
     end

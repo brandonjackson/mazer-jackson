@@ -403,11 +403,7 @@ classdef PFUtil < SuperUtil
                 % do nothin bc this option is a computational walk in the
                 % park!
             elseif strcmp(task,'curvplay')
-                if strcmp(pf.rec(1).params.imagedir,'/auto/data/stimuli/jackson/angles_bold-0.25')
-                    APL = AnglePlayLoader('imagedir','/lab/stimuli/curvplay_jackson/angles_medium/');
-                else
-                    APL = AnglePlayLoader();
-                end
+                APL = AnglePlayLoader(pf);
                 AP = AnglePlay(pf,50,50);
                 if strcmp(p.Results.feature,'binary')
                     n_oris = length(AP.orientations);
@@ -431,7 +427,7 @@ classdef PFUtil < SuperUtil
                 if strcmp(p.Results.feature,'image')
                     image_size = 12;
                     n_stim_dimensions = image_size^2;
-                    GRL = GratRevLoader();
+                    GRL = GratRevLoader(pf);
                 elseif strcmp(p.Results.feature,'binary')
                     n_stim_dimensions = length(GR.oris) * length(GR.sfs);
                 end
@@ -498,7 +494,8 @@ classdef PFUtil < SuperUtil
                     elseif strcmp(p.Results.feature,'image')
                         IMG_WIDTH = 16;
                         stim_n = sscanf(unique_triggers{i},'%*s %d',1);
-                        image = APL.getByImageNumber(pf, stim_n, IMG_WIDTH);
+                        image = APL.getByImageNumber(pf, stim_n);
+                        image = imresize(image, [IMG_WIDTH,IMG_WIDTH]);
                         feature_v = reshape(image,[IMG_WIDTH^2 1]);
                         n_stim_dimensions = IMG_WIDTH^2;
                     else
@@ -508,7 +505,8 @@ classdef PFUtil < SuperUtil
                     end
                     stimulus_features{i} = feature_v;
                 elseif strcmp(task,'gratrev') && strcmp(p.Results.feature,'image')
-                    grating = GRL.getByTrigger(pf, unique_triggers{i}, sqrt(n_stim_dimensions));
+                    grating = GRL.getByTrigger(pf, unique_triggers{i});
+                    grating = imresize(grating, [sqrt(n_stim_dimensions), sqrt(n_stim_dimensions)]);
                     grating = grating - 0.5; % demean, rescaling from [0,1] -> [-0.5, 0.5]
                     stimulus_features{i} = reshape(grating,[n_stim_dimensions 1]);
                 elseif strcmp(task,'gratrev') % binary

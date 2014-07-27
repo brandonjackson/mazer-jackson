@@ -1,4 +1,4 @@
-classdef AnglePlayLoader < handle
+classdef AnglePlayLoader < SuperLoader
     % ANGLEPLAYLOADER load AnglePlay stimuli
     %
     % @todo implement getByTrigger()
@@ -6,41 +6,43 @@ classdef AnglePlayLoader < handle
     
     properties
         
-        file_list
+        % Directory where images are stored
         image_dir
+        
+        % List of image files
+        image_list
+        
+        % List of orientations that images are rotated by
         oris
 
+        % Task Version (0==old, 1==new)
+        task_version
     end
     
 	properties (Constant)
-        ANGLEPLAY_PATH = '/lab/stimuli/curvplay_jackson2/angles_medium';
-        MAX_WIDTH = 400;
     end
     
     methods
-        function APL = AnglePlayLoader(varargin)
+        function APL = AnglePlayLoader(pf, varargin)
             
-            p = inputParser;
-            addParameter(p,'imagedir', 0);
-            parse(p,varargin{:});
+            APL = APL@SuperLoader(pf); % Construct superclass
             
-            if p.Results.imagedir ~= 0
-                APL.image_dir = p.Results.imagedir;
-            else
-                APL.image_dir = AnglePlayLoader.ANGLEPLAY_PATH;
-            end
+            APL.image_dir = APL.pf.rec(1).params.imagedir;
             
-            % orientations to rotate images
-            % @todo load from p2m file
-            APL.oris = 0:45:315;
+            % Load list of orientations to rotate images
+            oristep = APL.pf.rec(1).params.oristep;
+            APL.oris = 0:oristep:(360-oristep);
             
+            % Load list of file names
             image_dir_struct = dir([APL.image_dir '/*.png']);
-            APL.file_list = cell(length(image_dir_struct),2);
+            APL.image_list = cell(length(image_dir_struct),1);
             for i=1:length(image_dir_struct)
-                APL.file_list{i, 1} = image_dir_struct(i).name;
-               % GL.file_list{i, 2} = sscanf(GL.file_list{i, 1},'%u-');
+                APL.image_list{i, 1} = image_dir_struct(i).name;
             end
             clear image_dir_struct;
+            
+            % Determine whether old or new version of task used
+            APL.task_version = AnglePlayUtil.taskVersion(APL.pf);
         end
         
         function [img] = randomStimulus(APL)
@@ -48,20 +50,20 @@ classdef AnglePlayLoader < handle
         %   RETURN img                  (uint8 matrix) grayscale image
         %   RETURN vector               (uint8 vector) orientations
         
-            image_i = randi([1 length(APL.file_list)]);
-            vector = APL.file_list{image_i,2};
-            path = [APL.image_dir '/' APL.file_list{image_i,1}];
-            img = APL.loadImage(path);
+            image_i = randi([1 length(APL.image_list)]);
+            path = [APL.image_dir '/' APL.image_list{image_i,1}];
+            rotation = APL.oris(randi(length(APL.oris),1));
+            img = APL.loadImage(path, rotation);
         end
         
-        function [img] = getByImageNumber(APL, pf, inum, downsampled_size)
+        function [img] = getByImageNumber(APL, inum)
         % GETBYIMAGENUMBER loads an image based on the INUM stored
         % in the p2m file, PF.
         % NB: the inum index should be zero-based, since this is how they
         % are stored in the p2m file ev_e entry
         
             % load image info from p2m file,
-            image_info = pf.rec(1).params.IMAGE_INFO{inum + 1};
+            image_info = APL.pf.rec(1).params.IMAGE_INFO{inum + 1};
             
             % tokenize image info, extracting rotation and filename
             tokens = strsplit(image_info,[char(9) ' ']); % split by tab+space
@@ -69,18 +71,15 @@ classdef AnglePlayLoader < handle
             path = [APL.image_dir '/' filename];
             rotation = str2num(tokens{5});
             
-            if nargin < 4
-                img = APL.loadImage(path,rotation);
-            else
-                img = APL.loadImage(path,rotation,downsampled_size);
-            end
+            img = APL.loadImage(path,rotation);
+            
         end
         
 %         function img = getByTrigger(APL, pf, trigger)
 %             
 %         end
         
-        function img = loadImage(APL, path, rotation, downsampled_size)
+        function stimulus = loadImage(APL, path, rotation)
             
             try
                 [img, map, a] = imread(path);
@@ -89,61 +88,74 @@ classdef AnglePlayLoader < handle
                 if ~isempty(map)
                     img = ind2gray(img,map);
                 end
+                
+                % Convert RGB to grayscale
+                if(length(size(img))==3)
+                    img = rgb2gray(img);
+                end
+                
             catch err
                 fprintf('path:\n%s\n',path)
                 rethrow(err);
             end
             
-            img_size = size(img);
-            if(length(img_size)==3)
-                img = double(rgb2gray(img));
-            else
-                img = double(img);
-            end
-
-            % rescale from [0,255] -> [0,1]
-            img = img / 255;
+            % Convert to double, rescale from [0,255] -> [0,1]
+            img = im2double(img); 
             
-            % resize to be MAX_WIDTH
-            if size(img,1) > APL.MAX_WIDTH
-                img = imresize(img,[APL.MAX_WIDTH, APL.MAX_WIDTH]);
-                img(img < 0) = 0; % get rid of scaling artifacts
-                img(img > 1) = 1;
-            end
-            
-            % eliminate border effects (some pixels are slightly off-white)
+            % Eliminate border effects (some pixels are slightly off-white)
             img(img > 0.9) = 1;
-            stim_w = size(img,1);
             
-            % invert image since imrotate adds zeros to in blank spaces
-            % which in an un-inverted image appear as black. we'll convert
-            % it back later...
+            % Do Some Math First!
+            % Calculate image size (size to scale the image to)
+            if APL.task_version==1
+                image_size = (10 * APL.pf.rec(1).params.rfsigma) * APL.pf.rec(1).params.ds;
+            elseif isfield(APL.pf.rec(1).params,'scale')
+                image_size = size(img,1) * APL.pf.rec(1).params.scale;
+            else
+                image_size = size(img,1);
+            end
+            
+            % Calculate stimulus size (size of final stimulus (pre-scaling))
+            stimulus_size = round(image_size * 1.5); % in theory, should be * sqrt(2) 
+            
+            % Resize the Image
+            img = imresize(img, [image_size image_size]);
+            img(img < 0) = 0; % get rid of scaling artifacts
+            img(img > 1) = 1;
+            
+            % Rotate the Image
+            % invert image (since imrotate adds zeros to in blank spaces
+            % which in an un-inverted image appear as black), rotate, and
+            % un-invert back to normal color range
             img_inverted = imcomplement(img);
-            
-            % rotate the image and clean up the resulting mess
-            % - undo the inversion
-            % - the rotation increases the size of the image, and so it
-            %   must be cropped back to normal size
-            if nargin < 3
-                rotation = APL.oris(randi(length(APL.oris),1));
-            end
             img_rotated_inverted = imrotate(img_inverted, rotation);
-            
             img_rotated = imcomplement(img_rotated_inverted);
+            
+            % Insert rotated image into big stimulus foreground frame
+            % (with padding to account for changes in size when rotated)
             rotated_dim = size(img_rotated,1);
-            min_pad = round((rotated_dim - stim_w)/2);
-            img_rotated = img_rotated(min_pad+1:(min_pad + stim_w - 1),min_pad+1:(min_pad + stim_w - 1));
+            pad = round((stimulus_size - rotated_dim) / 2);
+            stimulus_fg = ones([stimulus_size,stimulus_size]);
+            stimulus_fg(pad:(pad + rotated_dim - 1),pad:(pad + rotated_dim - 1)) = img_rotated;
+                        
+            % Set background to gray, rescale from [0,1] -> [0,0.5]
+            stimulus_fg = (stimulus_fg / 2);
             
-            % set background to gray, and then demean so that gray is 0
-            % effectively rescales range from [0,1] -> [0,0.5] -> [-0.5,0.5]
-            img = (img_rotated / 2);% - 0.5;
-            
-            if nargin >= 4
-                slice_w = round(size(img,2) / 2);
-                padding = round((size(img,2) - slice_w)/2);
-                img = img(padding+1:(padding+slice_w - 1),padding+1:(padding+slice_w - 1));
-                img = imresize(img,[downsampled_size, downsampled_size]);
+            % Create Gaussian Envelope, rescale so range is [0,1]
+            if APL.task_version==0
+                sigma = APL.pf.rec(1).params.sigma;
+            else
+                sigma = APL.pf.rec(1).params.rfsigma * APL.pf.rec(1).params.nsigma;
             end
+            gaussian_envelope = fspecial('Gaussian',stimulus_size,sigma);
+            gaussian_envelope = gaussian_envelope / max(gaussian_envelope(:));
+            
+            % Create Gray Stimulus Background
+            stimulus_bg = 0.5 * ones(size(stimulus_fg));
+            
+            % Blend Stimulus Foreground + Alpha with Background
+            stimulus = gaussian_envelope.*stimulus_fg + (1-gaussian_envelope).*stimulus_bg;
+            
             % @todo change color of curve based on polarity
         end
 

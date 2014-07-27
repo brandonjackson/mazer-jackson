@@ -21,7 +21,7 @@ classdef AnglePlayWriter < SuperWriter
         %    pf
 
             APW.pf = pf;
-            APW.stimulusLoader = AnglePlayLoader();
+            APW.stimulusLoader = AnglePlayLoader(pf);
         end
         
         function new_pf = writeFromModel(APW, model)
@@ -60,7 +60,7 @@ classdef AnglePlayWriter < SuperWriter
                     % Load Stimulus                    
                     ev_e = new_pf.rec(i).ev_e{flip_ev_i(flip_i)};
                     stimulus_inum = sscanf(ev_e,'frameflip %d');
-                    stimulus = APW.stimulusLoader.getByImageNumber(APW.pf, stimulus_inum);
+                    stimulus = APW.stimulusLoader.getByImageNumber(stimulus_inum);
                     
                     % Iterate ms by ms, generating spikes
                     for t=1:duration
