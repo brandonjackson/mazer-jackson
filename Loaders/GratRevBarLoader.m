@@ -33,6 +33,11 @@ classdef GratRevBarLoader < SuperLoader
             img = GRBL.getByStimulusParams(stimulusParams);
         end
         
+        function img = getByTrigger(GRBL, trigger)
+            stimulusParams = GratRevUtil.trigger2stimulusParams(GRBL.pf,trigger);
+            img = GRBL.getByStimulusParams(stimulusParams);
+        end
+        
         function [img] = getByStimulusParams(GRBL, stimulusParams)
         % GETBYSTIMULUSPARAMS loads a bar image based on the details in
         % STIMULUSPARAMS. The STIMULUSPARAMS struct can be derived from the
