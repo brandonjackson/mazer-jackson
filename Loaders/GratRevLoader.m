@@ -5,6 +5,7 @@ classdef GratRevLoader < SuperLoader
     end
     
 	properties (Constant)
+        PADDING_RATIO = 0.25
     end
     
     methods
@@ -39,7 +40,7 @@ classdef GratRevLoader < SuperLoader
             img = GRL.getByStimulusParams(stimulusParams);
         end
         
-        function [img] = getByStimulusParams(GRL, stimulusParams)
+        function stimulus = getByStimulusParams(GRL, stimulusParams)
         % GETBYSTIMULUSPARAMS loads a grating image based on the details in
         % STIMULUSPARAMS. The STIMULUSPARAMS struct can be derived from the
         % ev_e triggers using the GratRevUtil.trigger2stimulusParams()
@@ -51,7 +52,7 @@ classdef GratRevLoader < SuperLoader
         %   - phase             (double) phase
         %   - sf                (double) spatial frequency, in cycles/pixel
         %
-        % IMG is a double in the range [0,1]
+        % STIMULUS is a double in the range [0,1]
             
             radius = stimulusParams.stimulusSize / 2; % @todo make sure this is an even number
             img = mkgrating(radius,...
@@ -67,8 +68,35 @@ classdef GratRevLoader < SuperLoader
             circle_y = radius;
             circle_radius = radius;
             [circle_xx,circle_yy] = ndgrid((1:size(img,1))-circle_x,(1:size(img,2))-circle_y);
-            mask = (circle_xx.^2 + circle_yy.^2) < circle_radius^2;
-            img = ((img - 0.5) .* mask + 0.5);
+            outer_mask = (circle_xx.^2 + circle_yy.^2) < circle_radius^2;
+            img(~outer_mask) = 0.5;
+            
+            % Add Taper
+            taper_size = GRL.pf.rec(1).params.taper;
+            taper_alpha = linspace(0,1,taper_size+2); % add 1 to include 0 and 1 in the sequence
+            taper_alpha = taper_alpha(2:end-1);
+            % @todo experiment with different taper slopes
+            taper_alpha = taper_alpha.^1.5;
+            
+            % Alpha blend, one concentric circle at a time
+            for i=1:taper_size
+                circle_x = radius;
+                circle_y = radius;
+                circle_radius = radius - i;
+                [circle_xx,circle_yy] = ndgrid((1:size(img,1))-circle_x,(1:size(img,2))-circle_y);
+                % Find circle
+                taper_mask = ((circle_xx.^2 + circle_yy.^2) >= circle_radius^2)...
+                            & ((circle_xx.^2 + circle_yy.^2) < (circle_radius+1)^2);
+                % Alpha blending
+                img(taper_mask) = taper_alpha(i) * img(taper_mask) + (1-taper_alpha(i)) * 0.5;
+            end
+            
+            % Add Padding
+            padding_size = round(size(img,1)*GRL.PADDING_RATIO); % amount of padding
+            bg = 0.5 * ones(size(img,1)+padding_size);
+            stimulus = bg;
+            pad = round(padding_size / 2);
+            stimulus(pad:(pad + size(img,1) - 1),pad:(pad + size(img,1) - 1)) = img;
         end
     end
 end
