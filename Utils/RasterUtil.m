@@ -59,6 +59,50 @@ classdef RasterUtil < SuperUtil
             triggers = unique(triggers_cell);
         end
         
+        function [spikes,ts,triggers] = meanSpikeVectors(pf,pre,post)
+        % MEANSPIKEVECTORS averages all the spike rasters across all
+        % presentations of each unique stimulus.
+        %
+        % Example (a unique stimulus presented 3 times):
+        %
+        % Original spike vectors:
+        %   0   0   0   0   0   1   0   0   0    (1 spike @ t=6)
+        %   0   1   0   0   0   1   0   0   0    (2 spike @ t=2, t=6)
+        %   0   0   0   0   0   0   0   0   0    (0 spikes)
+        %
+        % Mean spike vector:
+        %   0  0.33 0   0   0  0.66 0   0   0
+        %
+        % INPUTS
+        %   pf - p2m file
+        %   pre - start time (ms)
+        %   post - stop time (ms)
+        %
+        % OUTPUTS
+        %   rates - [n_unique_triggers x duration] matrix of spike rasters
+        %   ts - vector with time stamps
+        %   triggers - cell array of unique trigger strings
+
+            % By default use same time span as prast
+            if nargin < 3
+                pre = -200;
+                post = 400;
+            end
+            
+            % Get raster and unique triggers
+            raster = prast(pf,'pre',pre,'post',post);
+            ts = raster.time;
+            [triggers, ~, trigger_is] = unique(raster.triggers);
+            
+            spikes = zeros(length(triggers), size(raster.data,2));
+            
+            for i=1:length(triggers)
+                % Average spike vectors across all instances of a unique
+                % stimulus.
+                spikes(i,:) = nanmean(raster.data(trigger_is==i,:),1);
+            end
+        end
+        
         function [rates,ts,triggers] = rates(pf, pre, post)
         % RATES gets PSTHs (rates over time) for each unique stimulus frame
         % Firing rates generated using the spike density function for the
@@ -84,21 +128,12 @@ classdef RasterUtil < SuperUtil
                 post = 400;
             end
             
-            % Get raster and unique triggers
-            raster = prast(pf,'pre',pre,'post',post);
-            ts = raster.time;
-            [triggers, ~, trigger_is] = unique(raster.triggers);
+            [spikes,ts,triggers] = RasterUtil.meanSpikeVectors(pf,pre,post);
             
-            rates = zeros(length(triggers), size(raster.data,2));
-            
+            % Compute spike density function for each trigger
+            rates = zeros(size(spikes));
             for i=1:length(triggers)
-                % Average spike vectors across all instances of a unique
-                % stimulus
-                mean_spike_vector = nanmean(raster.data(trigger_is==i,:),1);
-                
-                % Create spike density function
-                sdf = RasterUtil.spikeDensity(mean_spike_vector);
-                rates(i,:) = sdf * 1000;
+                rates(i,:) = RasterUtil.spikeDensity(spikes(i,:)) * 1000;
             end
             max_rate = nanmean(rates(:)) + 4*nanstd(rates(:));
             
