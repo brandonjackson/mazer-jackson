@@ -9,6 +9,7 @@ classdef GratRevBarLoader < SuperLoader
     end
     
 	properties (Constant)
+        PADDING_RATIO = 0.5
     end
     
     methods
@@ -38,7 +39,7 @@ classdef GratRevBarLoader < SuperLoader
             img = GRBL.getByStimulusParams(stimulusParams);
         end
         
-        function [img] = getByStimulusParams(GRBL, stimulusParams)
+        function stimulus = getByStimulusParams(GRBL, stimulusParams)
         % GETBYSTIMULUSPARAMS loads a bar image based on the details in
         % STIMULUSPARAMS. The STIMULUSPARAMS struct can be derived from the
         % ev_e triggers using the GratRevUtil.trigger2stimulusParams()
@@ -50,7 +51,7 @@ classdef GratRevBarLoader < SuperLoader
         %   - phase             (double) phase
         %   - sf                (double) bar width, in px
         %
-        % IMG is a double in the range [0,1]
+        % STIMULUS is a double in the range [0,1]
             img = zeros(stimulusParams.stimulusSize,'double');
             width = stimulusParams.sf;
             center = stimulusParams.stimulusSize / 2;
@@ -67,13 +68,19 @@ classdef GratRevBarLoader < SuperLoader
             img = circshift(img,[0 round(center - (width/2))]);
             
             % Rotate
-            img = imrotate(img,stimulusParams.ori,'bilinear','crop');
+            img = imrotate(img,stimulusParams.ori,'bilinear');
+            
+            padding_amount = round(stimulusParams.stimulusSize * GRBL.PADDING_RATIO);
+            padded_size = stimulusParams.stimulusSize + padding_amount;
+            stimulus = zeros(padded_size);
+            pad = round((padded_size - size(img,1))/2);
+            stimulus(pad:size(img,1)+pad-1,pad:size(img,1)+pad-1) = img;
             
             % Add 0.5, so that image range is [0,1]
             % Note: the range was [-0.5,0.5] before so that when the image
             % was rotated the pixels added in the corner had the background
             % color of 0
-            img = img + 0.5; 
+            stimulus = stimulus + 0.5; 
             
             % @todo add gaussian envelope?
         end
