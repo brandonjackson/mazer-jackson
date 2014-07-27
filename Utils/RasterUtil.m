@@ -155,6 +155,28 @@ classdef RasterUtil < SuperUtil
             end
         end
         
+        function [responses,triggers] = responses(pf, lat, winsize)
+        % RESPONSES finds response (mean rate) for each unique stimulus and
+        % returns sorted lists of RESPONSES and TRIGGERS
+        %
+        % INPUTS
+        %   pf - p2m file
+        %   lat - latency (ms)
+        %   winsize - integration window size (ms)
+        %
+        % OUTPUTS
+        %   responses - list of firing rates (s/s)
+        %   triggers - cell array of trigger strings
+        
+            [spikes,ts,triggers_unsorted] = RasterUtil.meanSpikeVectors(pf,lat,lat+winsize);
+            responses_unsorted = zeros(length(triggers_unsorted),1);
+            for i=1:length(triggers_unsorted)
+                responses_unsorted(i) = sum(spikes(i,:))*1000 / length(ts);
+            end
+            [responses,I] = sort(responses_unsorted,'descend');
+            triggers = triggers_unsorted(I);
+        end
+        
         function [explainable_r] = explainableVariance(pf,lat,winsize,varargin)
         % EXPLAINABLEVARIANCE measures correlation b/w odd and even trials
         % It takes the standard PF/LAT/WINSIZE arguments and returns the
