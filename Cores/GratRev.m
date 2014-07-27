@@ -49,23 +49,8 @@ classdef GratRev < handle
             % Get raster
             GR.raster = prast(GR.pf);
             
-            triggers = unique(GR.raster.triggers);
-            stimuliParams = cell(length(triggers),1);
-            
             % Extract lists of oris, sfs and phases
-            oris = [];
-            sfs = [];
-            phases = [];
-            for i=1:length(triggers)
-                stimuliParams{i} = GratRevUtil.trigger2stimulusParams(GR.pf,triggers{i});
-                oris = [oris; stimuliParams{i}.ori];
-                sfs = [sfs; stimuliParams{i}.sf];
-                phases = [phases; stimuliParams{i}.phase];
-            end
-            GR.oris = unique(oris);
-            GR.sfs = unique(sfs);
-            GR.phases = unique(phases);
-            
+            [GR.oris,GR.sfs,GR.phases] = GratRevUtil.getStimulusSpace(GR.pf);
         end
     end
     

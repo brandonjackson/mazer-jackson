@@ -2,6 +2,11 @@ classdef GratRevLoader < SuperLoader
     % GRATREVLOADER loads gratrev stimuli
     
     properties
+        % Lists storing the stimulus parameter space
+        oris
+        sfs
+        phases
+
     end
     
 	properties (Constant)
@@ -11,27 +16,22 @@ classdef GratRevLoader < SuperLoader
     methods
         function GRL = GratRevLoader(pf)
             GRL = GRL@SuperLoader(pf); % Construct superclass
+
+           % Get stimulus space so we can generate the correct random stimuli
+           [GRL.oris, GRL.sfs, GRL.phases] = GratRevUtil.getStimulusSpace(GRL.pf);
         end
         
         function [img] = randomStimulus(GRL)
         % RANDOMSTIMULUS loads a random gratrev stimulus image
         % See GratRevLoader.getByStimulusParams for details of image
         % generation.
-        
-            % @todo load the stimulus space from the p2m file
-            oris = 0:15:165;
-            phases = [0,180];
-            sfs = [1,2,4,8,16,32,64];
-            
             stimulusParams = {};
             stimulusParams.rmult = 1;
             stimulusParams.stimulusSize = GratRevUtil.getStimulusSize(GRL.pf);
-            stimulusParams.ori = oris(randi(length(oris)));
-            stimulusParams.phase = phases(randi(length(phases)));
-            stimulusParams.sf = sfs(randi(length(sfs)));
-            stimulusParams.sf = (round(stimulusParams.sf/stimulusParams.rmult) / stimulusParams.stimulusSize);
+            stimulusParams.ori = GRL.oris(randi(length(GRL.oris)));
+            stimulusParams.phase = GRL.phases(randi(length(GRL.phases)));
+            stimulusParams.sf = GRL.sfs(randi(length(GRL.sfs)));
             stimulusParams.stype = 0; % grating
-            
             img = GRL.getByStimulusParams(stimulusParams);
         end
         

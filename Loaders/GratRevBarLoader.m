@@ -2,6 +2,10 @@ classdef GratRevBarLoader < SuperLoader
     % GRATREVBARLOADER loads gratrev bar stimuli
     
     properties
+        % Lists storing the stimulus parameter space
+        oris
+        sfs     % bar widths in pixels
+        phases
     end
     
 	properties (Constant)
@@ -10,26 +14,22 @@ classdef GratRevBarLoader < SuperLoader
     methods
         function GRBL = GratRevBarLoader(pf)
            GRBL = GRBL@SuperLoader(pf); % Construct superclass
+           
+           % Get stimulus space so we can generate the correct random stimuli
+           [GRBL.oris, GRBL.sfs, GRBL.phases] = GratRevUtil.getStimulusSpace(GRBL.pf);
         end
         
         function [img] = randomStimulus(GRBL)
         % RANDOMSTIMULUS loads a random gratrev stimulus image
         % See GratRevLoader.getByStimulusParams for details of image
-        % generation.
-        
-            % @todo load the stimulus space from the p2m file
-            oris = 0:15:165;
-            phases = [0,180];
-            sfs = [1,2,4,8,16,32,64]; % nb: width in pixels
-            
+        % generation.            
             stimulusParams = {};
             stimulusParams.rmult = 1;
             stimulusParams.stimulusSize = GratRevUtil.getStimulusSize(GRBL.pf);
-            stimulusParams.ori = oris(randi(length(oris)));
-            stimulusParams.phase = phases(randi(length(phases)));
-            stimulusParams.sf = sfs(randi(length(sfs)));
+            stimulusParams.ori = GRBL.oris(randi(length(GRBL.oris)));
+            stimulusParams.phase = GRBL.phases(randi(length(GRBL.phases)));
+            stimulusParams.sf = GRBL.sfs(randi(length(GRBL.sfs)));
             stimulusParams.stype = 1; % bar
-            
             img = GRBL.getByStimulusParams(stimulusParams);
         end
         
