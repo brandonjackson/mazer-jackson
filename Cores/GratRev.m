@@ -52,6 +52,50 @@ classdef GratRev < handle
             % Extract lists of oris, sfs and phases
             [GR.oris,GR.sfs,GR.phases] = GratRevUtil.getStimulusSpace(GR.pf);
         end
+        
+        function [] = plotBestStimuli(GR)
+        % PLOTBESTSTIMULI plots the stimuli with highest evoked responses
+        % Sorts stimuli based on their evoked response, then plots the 
+        % kernel, details of the response distribution, and a grid of the
+        % best stimuli.
+            
+            N_STIMS = 24; % stims to plot
+            
+            [resps,trigs] = RasterUtil.responses(GR.pf, GR.latency, GR.winsize);
+            
+            loader = GratRevUtil.getStimulusLoader(GR.pf);
+            
+            figure();
+            
+            % Plot Kernel
+            subplot(5,6,1:2);
+            grk2(GR.pf,GR.latency,GR.winsize);
+            title('Kernel (sf vs. ori)');
+            
+            % Plot graph of Responses
+            subplot(5,6,3:4);
+            plot(1:N_STIMS,resps(1:N_STIMS),'-k.');
+            hold on;
+            plot(N_STIMS+1:length(resps),resps(N_STIMS+1:end),'-k');
+            title('Firing Rates');
+            
+            % Plot Response Distribution
+            subplot(5,6,5:6);
+            hist(resps);
+            h = findobj(gca,'Type','patch');
+            set(h,'FaceColor',[0 0 0],'EdgeColor','w')
+            title('Firing Rate Histogram');
+            
+            % Plot Best Stimuli
+            for i=1:N_STIMS
+                subplot(5,6,i+6);
+                imshow(loader.getByTrigger(trigs{i}));
+                axis square;
+                title(sprintf('%.0f s/s',resps(i)));
+            end
+            
+            boxtitle([PFUtil.experName(GR.pf) ' Best Stimuli']);
+        end
     end
     
     methods(Static)
