@@ -505,7 +505,7 @@ classdef PFUtil < SuperUtil
                     end
                     stimulus_features{i} = feature_v;
                 elseif strcmp(task,'gratrev') && strcmp(p.Results.feature,'image')
-                    grating = GRL.getByTrigger(pf, unique_triggers{i});
+                    grating = GRL.getByTrigger(unique_triggers{i});
                     grating = imresize(grating, [sqrt(n_stim_dimensions), sqrt(n_stim_dimensions)]);
                     grating = grating - 0.5; % demean, rescaling from [0,1] -> [-0.5, 0.5]
                     stimulus_features{i} = reshape(grating,[n_stim_dimensions 1]);

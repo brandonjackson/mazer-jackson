@@ -35,8 +35,8 @@ classdef GratRevLoader < SuperLoader
             img = GRL.getByStimulusParams(stimulusParams);
         end
         
-        function [img] = getByTrigger(GRL, pf, trigger)
-            stimulusParams = GratRevUtil.trigger2stimulusParams(pf, trigger);
+        function [img] = getByTrigger(GRL, trigger)
+            stimulusParams = GratRevUtil.trigger2stimulusParams(GRL.pf, trigger);
             img = GRL.getByStimulusParams(stimulusParams);
         end
         
