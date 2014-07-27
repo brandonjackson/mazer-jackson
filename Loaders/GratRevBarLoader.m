@@ -24,7 +24,7 @@ classdef GratRevBarLoader < SuperLoader
             
             stimulusParams = {};
             stimulusParams.rmult = 1;
-            stimulusParams.stimulusSize = GratRevUtil.getStimulusSize(GRL.pf);
+            stimulusParams.stimulusSize = GratRevUtil.getStimulusSize(GRBL.pf);
             stimulusParams.ori = oris(randi(length(oris)));
             stimulusParams.phase = phases(randi(length(phases)));
             stimulusParams.sf = sfs(randi(length(sfs)));
