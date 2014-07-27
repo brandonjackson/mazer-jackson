@@ -61,18 +61,39 @@ classdef RasterUtil < SuperUtil
         
         function [rates,ts,triggers] = rates(pf, pre, post)
         % RATES gets PSTHs (rates over time) for each unique stimulus frame
+        % Firing rates generated using the spike density function for the
+        % specified time slice between PRE and POST ms
+        %
+        % INPUTS
+        %   pf - p2m file
+        %   pre - start time (ms)
+        %   post - stop time (ms)
+        %
+        % OUTPUTS
+        %   rates - [n_unique_triggers x duration] matrix of firing rates
+        %   ts - vector with time stamps
+        %   triggers - cell array of unique trigger strings
+        %
+        %   ~OR~
+        %
+        %   plots a grid of PSTHs (if no output args provided)
             
+            % By default use same time span as prast
             if nargin < 3
                 pre = -200;
                 post = 400;
             end
+            
+            % Get raster and unique triggers
             raster = prast(pf,'pre',pre,'post',post);
             ts = raster.time;
-            
             [triggers, ~, trigger_is] = unique(raster.triggers);
+            
             rates = zeros(length(triggers), size(raster.data,2));
             
             for i=1:length(triggers)
+                % Average spike vectors across all instances of a unique
+                % stimulus
                 mean_spike_vector = nanmean(raster.data(trigger_is==i,:),1);
                 
                 % Create spike density function
@@ -88,7 +109,14 @@ classdef RasterUtil < SuperUtil
                     area(ts, rates(randi(length(triggers)),:));
                     ylim([0 max_rate]);
                     xlim([0 250]);
+                    if i==1 || i==5 || i==9 || i==13 || i==17
+                        ylabel('s/s');
+                    end
+                    if i > 16
+                        xlabel('ms');
+                    end
                 end
+                boxtitle([PFUtil.experName(pf) ' PSTHs for Unique Stimuli']);
             end
         end
         
