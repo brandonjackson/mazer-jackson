@@ -61,6 +61,8 @@ classdef GridCurvLoader < SuperLoader
 
             % Convert image to range [0,1]
             img = im2double(img);
+            
+            img = imresize(img,GRBL.DOWNSAMPLE_SCALE);
         end
 
     end

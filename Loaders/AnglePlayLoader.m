@@ -157,6 +157,7 @@ classdef AnglePlayLoader < SuperLoader
             stimulus = gaussian_envelope.*stimulus_fg + (1-gaussian_envelope).*stimulus_bg;
             
             % @todo change color of curve based on polarity
+            stimulus = imresize(stimulus,APL.DOWNSAMPLE_SCALE);
         end
 
     end

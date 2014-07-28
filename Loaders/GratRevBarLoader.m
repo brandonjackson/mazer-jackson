@@ -20,7 +20,7 @@ classdef GratRevBarLoader < SuperLoader
            [GRBL.oris, GRBL.sfs, GRBL.phases] = GratRevUtil.getStimulusSpace(GRBL.pf);
         end
         
-        function [img] = randomStimulus(GRBL)
+        function [img,stimulusParams] = randomStimulus(GRBL)
         % RANDOMSTIMULUS loads a random gratrev stimulus image
         % See GratRevLoader.getByStimulusParams for details of image
         % generation.            
@@ -83,6 +83,8 @@ classdef GratRevBarLoader < SuperLoader
             stimulus = stimulus + 0.5; 
             
             % @todo add gaussian envelope?
+            
+            stimulus = imresize(stimulus,GRBL.DOWNSAMPLE_SCALE);
         end
     end
 end

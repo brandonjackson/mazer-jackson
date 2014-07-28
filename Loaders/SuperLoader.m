@@ -8,7 +8,7 @@ classdef SuperLoader < handle
     
 	properties (Constant)
         % Stimuli are loaded at this downsampled scale
-        DOWNSAMPLE_SCALE = 0.5
+        DOWNSAMPLE_SCALE = 0.66
     end
     
     methods

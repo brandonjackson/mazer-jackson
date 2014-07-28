@@ -97,6 +97,8 @@ classdef GratRevLoader < SuperLoader
             stimulus = bg;
             pad = round(padding_size / 2);
             stimulus(pad:(pad + size(img,1) - 1),pad:(pad + size(img,1) - 1)) = img;
+            
+            stimulus = imresize(stimulus,GRL.DOWNSAMPLE_SCALE);
         end
     end
 end

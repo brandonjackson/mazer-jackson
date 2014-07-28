@@ -1841,7 +1841,7 @@ classdef AnglePlay < handle
             ap_ap_prediction_score = ap_ap_r_squared / ap_explainable_var;
             
             % Use Gratrev Model on AnglePlay
-            load('Variables/ComplexCelLModelArgs');
+            load('Variables/ComplexCellModelArgs');
             load('Variables/gratrev_stimulus_space');
             ComplexCellModelArgs.ori = gr_modelfit_results.ori;
             ComplexCellModelArgs.wavelength = gr_modelfit_results.wavelength;
