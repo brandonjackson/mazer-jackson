@@ -140,6 +140,7 @@ classdef SimpleCellModel < SuperModel
                     margin = round((SC.stimulusSize(1) - kernel_size) / 2);
                     stimulus = stimulus(margin:(kernel_size(1)+margin-1),margin:(kernel_size(2)+margin-1));
                 end
+                stimulus = stimulus - 0.5; % center
 
                 OUT.final_kernel = SC.kernel;
 
