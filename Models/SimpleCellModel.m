@@ -1,38 +1,30 @@
 classdef SimpleCellModel < SuperModel
-    % SIMPLECELLMODEL complex cell model
+    % SIMPLECELLMODEL simple cell model
+    % Generates output by convolving the stimulus input with a gabor filter
     
     properties
 
+        % Gabor parameters
         ori
-        
         wavelength
-        
         sigma
-        
         phase
-        
         aspect
-                
-        fullwaverectify
         
-        nonlinearities
-        
+        % The kernel (a Gabor filter)
         kernel
         
-        kernel_pos
+        % Flag determining whether to ignore sign of convolution sum
+        fullwaverectify
         
-        x_offset
+        % Struct storing parameters of the nonlinearity
+        nonlinearities
         
-        y_offset
-        
+        % Cache related variables
         cacheEnabled
-                
         cached_response
-        
         cached_response_sum
-        
         cached_firing_rate
-
     end
     
     properties (Constant)
@@ -40,23 +32,30 @@ classdef SimpleCellModel < SuperModel
     end
     
     methods
-        function [ SC ] = SimpleCellModel(args, loader)
+        function SC = SimpleCellModel(args, loader)
         % SIMPLECELLMODEL constructs a new model object.
         % This constructor creates two simple cell subunits. It requires
         % multiple args, which are listed below.
         %
-        % PARAMS
-        %   args
-        %       orientation
+        % INPUTS
+        %   args - struct with these fields:
+        %       ori
+        %       wavelength
+        %       sigma
         %       phase
-        %       gabor_params
-        %       nonlinearities
-        %       stimulusLoader
-        %       stimulusSize
-        %       x_offset
-        %       y_offset
+        %       aspect
+        %       nonlinearities - a struct with the fields:
+        %           sc_a
+        %           sc_b
+        %       fullwaverectify (optional)
+        %       cacheEnabled (optional)
+        %   loader - stimulus loader class
         
             if nargin < 2 || isempty(loader)
+                % note: the loader is not actually being used right now
+                % because it was used to intelligently fit the
+                % nonlinearities. thus if it isn't provided we just create
+                % a dummy variable
                 loader = [];
                %warning('no stimulus loader provided');
             else
@@ -69,11 +68,7 @@ classdef SimpleCellModel < SuperModel
             SC.phase = args.phase;
             SC.aspect = args.aspect;
             SC.nonlinearities = args.nonlinearities;
-            SC.x_offset = 0;
-            SC.y_offset = 0;
             
-            
-
             if ~isfield(args,'fullwaverectify')
                 SC.fullwaverectify = 0;
             else
@@ -87,12 +82,8 @@ classdef SimpleCellModel < SuperModel
             end
 
             % Create Filter
-            gabor = GaborUtil.createFilter(args.ori, args.wavelength, args.sigma, args.phase, args.aspect);
-            %gabor = gabor_filter(args.gabor_params,'phase',args.phase,'theta',args.orientation);
-            SC.kernel = gabor;
-            
-            %[SC.kernel,SC.kernel_pos] = gabor_filter_translate(gabor, args.stimulusSize, args.x_offset, args.y_offset);
-            
+            SC.kernel = GaborUtil.createFilter(args.ori, args.wavelength, args.sigma, args.phase, args.aspect);
+                        
             if SC.nonlinearities.sc_a==1 && SC.nonlinearities.sc_b==0
                 SC.fit();
             end
@@ -110,9 +101,6 @@ classdef SimpleCellModel < SuperModel
         %   OUT.response
         %   OUT.response_sum
         %   OUT.final_kernel
-
-            % Poisson Scale
-            POISSON_SCALE = 0.001;
 
             % Output variable
             OUT = {};
