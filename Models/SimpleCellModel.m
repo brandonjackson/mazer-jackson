@@ -200,8 +200,9 @@ classdef SimpleCellModel < SuperModel
 
                 stim = SC.stimulusLoader.randomStimulus();
                 stim = stim - mean(stim(:));
-                SC.gabor_params.theta = rand() * pi;
-                gb = gabor_filter(SC.gabor_params);
+
+                gb = GaborUtil.createFilter((rand() * pi),SC.wavelength,...
+                    SC.sigma,SC.phase,SC.aspect);
 
                 for pos=1:N_POSITIONS
                     xmin = (round(size(stim,2)/2.7)) - (SC.gabor_params.kernel_size/2);
@@ -215,7 +216,7 @@ classdef SimpleCellModel < SuperModel
                         y_offset = randi([-1*xmin xmin]);
                     end
                     
-                    new_gb = gabor_filter_translate(gb, size(stim), x_offset ,y_offset);
+                    new_gb = GaborUtil.translate(gb, size(stim), x_offset ,y_offset);
 
                     response = double(stim) .* new_gb;
 

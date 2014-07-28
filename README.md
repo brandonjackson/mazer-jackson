@@ -120,6 +120,10 @@ as static methods in the near future:
 - AnglePlayUtil
 - GratRevUtil
 
+Finally there is a class that handles creating Gabor filters:
+
+- GaborUtil
+
 ### Misc
 
 - RatesDB: performs analysis of many cells and stores results in a searchable database format
@@ -138,8 +142,6 @@ Scripts
     - pstrf_delta
 - Utils
     - pffind
-    - gabor_filter
-    - gabor_filter_translate
 
 To-Do List
 ----------
@@ -165,9 +167,6 @@ a custom explainableVariance() method in AnglePlay but it should
 intelligently override the RasterUtil version somehow.
 - `AnglePlayUtil` and `GratRevUtil` should be made static methods of their
 respective Core classes
-- `gabor_filter.m` and `gabor_filter_translate.m` should be moved to a class
-definition (and moved out of the GridCurv class, where they are static 
-methods)
 - `SuperUtil.bootstrappedAutocorrelogram()` should be merged into 
 `SuperUtil.autocorrelogram()`, and perhaps moved to a new class
 - Poisson analysis code should be moved out of `SuperUtil` and into its own
