@@ -124,27 +124,27 @@ classdef SimpleCellModel < SuperModel
                 kernel_size = size(SC.kernel);
 
                 if isequal(SC.stimulusSize,kernel_size)
-                    % Do nothing, we're all set!
+                    OUT.final_kernel = SC.kernel;
                 
-                % Stimulus smaller than kernel: add padding to stimulus so
-                % that it is the same size as the kernel
+                % Stimulus smaller than kernel: cut out slice of kernel
+                % that is the size of the stimulus (since everything
+                % outside of the stimulus would be zero if we added padding
+                % to the stimulus anyways)
                 elseif SC.stimulusSize(1) < kernel_size(1)
-                    pad = round((kernel_size(1) - SC.stimulusSize(1)) / 2);
-                    stimulus_padded = zeros(kernel_size) + 0.5;
-                    stimulus_padded((pad+1):(SC.stimulusSize(1)+pad),(pad+1):(SC.stimulusSize(1)+pad)) = stimulus;
-                    stimulus = stimulus_padded;
+                    margin = round((kernel_size - SC.stimulusSize(1)) / 2);
+                    OUT.final_kernel = SC.kernel(margin:(SC.stimulusSize(1)+margin-1),margin:(SC.stimulusSize(2)+margin-1));
                 
                 % Stimulus bigger than kernel: cut out slice of stimulus
                 % that is the size of the kernel
                 else
                     margin = round((SC.stimulusSize(1) - kernel_size) / 2);
                     stimulus = stimulus(margin:(kernel_size(1)+margin-1),margin:(kernel_size(2)+margin-1));
+                    OUT.final_kernel = SC.kernel;
                 end
+                
                 stimulus = stimulus - 0.5; % center
 
-                OUT.final_kernel = SC.kernel;
-
-                OUT.response = SC.kernel .* double(stimulus);
+                OUT.response = OUT.final_kernel .* stimulus;
 
                 % Save Sum
                 OUT.response_sum = sum(OUT.response(:));
