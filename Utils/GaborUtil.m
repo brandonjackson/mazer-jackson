@@ -31,7 +31,11 @@ classdef GaborUtil < handle
             end
 
             theta = degtorad(ori + 90); % convert to radians!
-            kernel_size = [8*sigma*aspect 8*sigma*aspect];
+            kernel_size = [6*sigma*aspect 6*sigma*aspect]; 
+            % NOTE: this was originally set to create kernels 8*sigma*aspect
+            % but was changed to six to reduce kernel sizes for
+            % computational speed, at the cost of cropping the gabor on the
+            % fringes
 
             xmax = floor(kernel_size(2)/2);
             xmin = -xmax;
