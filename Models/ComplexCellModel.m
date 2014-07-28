@@ -3,79 +3,70 @@ classdef ComplexCellModel < SuperModel
     
     properties
 
+        % Gabor parameters
         ori
-        
         wavelength
-        
         sigma
-        
-        phase
-        
         aspect
         
+        % Struct storing parameters of the nonlinearity
         nonlinearities
-                
-      %  x_offset
         
-     %   y_offset
-        
+        % Simple cell subunits
         SC1
-        
         SC2
         
+        % Flag noting whether cache is enabled
         cacheEnabled
         
+        % Determines which output of subunits is used to generate output
         subunitInputType
-
     end
     
     properties (Constant)
-                
     end
     
     methods
 
         function CX = ComplexCellModel(args, loader)
+            
         % COMPLEXCELLMODEL constructs a new model object.
         % This constructor creates two simple cell subunits. It requires
         % multiple args, which are listed below.
         %
-        % PARAMS
-        %   args
-        %       orientation
-        %       argsgabor_params
-        %       nonlinearities
-        %       stimulusLoader
-        %       stimulusSize
-        %       x_offset
-        %       y_offset
-        %       imageLoader
-        %       fit
-        %       cacheEnabled
-        %       subunitAlgorithm
-       
+        % INPUTS
+        %   args - struct with these fields:
+        %       ori
+        %       wavelength
+        %       sigma
+        %       aspect
+        %       nonlinearities - a struct with the fields:
+        %           sc_a
+        %           sc_b
+        %       subunitInputType(optional)
+        %       cacheEnabled (optional)
+        %       fit (optional)
+        %   loader - stimulus loader class
+
             if nargin < 2
+                % note: the loader is not actually being used right now
+                % because it was used to intelligently fit the
+                % nonlinearities. thus if it isn't provided we just create
+                % a dummy variable
                 loader = [];
                 %warning('no stimulus loader provided');
             else
                 CX.setStimulusLoader(loader);
             end
                 
-
-            % Define orientation and offsets
+            % Save params from args struct
             CX.ori = args.ori;
             CX.wavelength = args.wavelength;
             CX.sigma = args.sigma;
-            CX.phase = args.phase;
             CX.aspect = args.aspect;
-            %CX.x_offset = args.x_offset;
-            %CX.y_offset = args.y_offset;
-            
             CX.nonlinearities = args.nonlinearities;
             CX.cacheEnabled = args.cacheEnabled;
             CX.subunitInputType = args.subunitInputType;
-            
-            
             
             % Simple Cell 1
             SC1_args = CX.getSimpleCellArgs('phase',0);
@@ -114,8 +105,6 @@ classdef ComplexCellModel < SuperModel
             % Load random stimulus if none provided
             if nargin < 2
                 stimulus = CX.stimulusLoader.randomStimulus();
-%             elseif ~isequal(size(stimulus),size(CX.stimulusSize))
-%                 warning('stimulus provided does not match CX.stimulusSize');
             end
 
             % Output variable
@@ -269,26 +258,35 @@ classdef ComplexCellModel < SuperModel
         end
         
         function [SC_args] = getSimpleCellArgs(CX, varargin)
+        % GETSIMPLECELLARGS generates a struct of args to be passed to
+        % SimpleCellModel
+        %
+        % The complex cell model shares many properties with the simple
+        % cell model so this function makes it easier to create the simple
+        % cell models that the complex cell model is made of
+        %
+        % INPUTS
+        %   varargin
+        %       'phase'
+        
             SC_args = {};
             SC_args.ori = CX.ori;
             SC_args.wavelength = CX.wavelength;
             SC_args.sigma = CX.sigma;
-            SC_args.phase = CX.phase;
             SC_args.aspect = CX.aspect;
-            %SC_args.x_offset = CX.x_offset;
-            %SC_args.y_offset = CX.y_offset;
-            SC_args.stimulusLoader = CX.stimulusLoader;
-            SC_args.stimulusSize = CX.stimulusSize;
             SC_args.nonlinearities = CX.nonlinearities;   
             SC_args.fullwaverectify = 1;
             SC_args.cacheEnabled = CX.cacheEnabled;
             
             if ~isempty(varargin) && strcmp(varargin{1},'phase') && length(varargin) > 1
                 SC_args.phase = varargin{2};
+            else
+                SC_args.phase = 0;
             end
         end
 
         function [] = plotKernel(CX)
+        % PLOTKERNEL plots the gabor filters of the 2 simple cell subunits
             figure();
             subplot(1,2,1);
             imagesc(CX.SC1.kernel);
@@ -309,6 +307,10 @@ classdef ComplexCellModel < SuperModel
     methods (Static)
         
         function [] = plotQuickKernel(ori, wavelength, sigma)
+        % PLOTQUICKKERNEL plots kernel using gabor params
+        % This function is useful because it allows you to preview what a
+        % CX kernel would look like without going through the trouble
+        % actually instantiating a model
             
             gb1 = GaborUtil.createFilter(ori, wavelength, sigma, 0);
             gb2 = GaborUtil.createFilter(ori, wavelength, sigma, pi/2);
