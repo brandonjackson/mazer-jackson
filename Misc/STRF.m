@@ -933,50 +933,58 @@ classdef STRF < handle
             end
         end
         
-        function [] = meanDeltaSTRF(path, stimulus,lambda,n_clusters,min_score,plot_kernels)
-            
-            if nargin < 5
+        function [] = meanDeltaSTRF(filedir, lambda,n_clusters,min_score)
+        % MEANDELTASTRF analyzes batch pstrf_delta results
+        % The function scans the pstrf_result files in FILEDIR with the
+        % specified LAMBDA and then averages the STRFs and finds clusters
+        % using k-means. Cells where the temporal impulse response explains 
+        % little variance can be ignored by providing a MIN_SCORE.
+        %
+        % INPUTS
+        %   filedir - directory to scan for .mat files
+        %   lambda - loads only results with matching lambda
+        %   n_clusters - number of k-means clusters to break into
+        %   min_score - ignores cells where STRF explains less than this
+        %
+        % OUTPUTS
+        %   (figure)
+
+        
+            if nargin < 4
                 min_score = 0.1;
             end
             
-            if nargin < 6
-                plot_kernels = 0;
-            end
-            
-           % path = ['/lab/results/batch_pstrf_deltas/' stimulus '/'];
+            % Scan folder for files with matching lambdas
             if strcmp(lambda,'auto')
-                files_query = sprintf('%s*auto*.mat',path);
+                files_query = sprintf('%s*auto*.mat',filedir);
             else
-                files_query = sprintf('%s*%.2f*.mat',path,lambda);
+                files_query = sprintf('%s*%.2f*.mat',filedir,lambda);
             end
             files = dir(files_query);
-
-            if strcmp(stimulus,'angleplay') || strcmp(stimulus,'gridcurv') || strcmp(stimulus,'reel')
-                N_LAGS = 24;
-            else
-                N_LAGS = 15;
+            
+            % Make sure files actually exist...
+            if size(files,1)==0
+                error(['No matching files found in ' filedir]);
             end
+            
+            % Load one data file to find out how many lags it has
+            load([filedir files(1).name]);
+            n_lags = length(pstrf_result.theta);
 
-            vectors = zeros(length(files),N_LAGS);
+            vectors = zeros(length(files),n_lags);
             lags = [];
             
-            if plot_kernels==1
-                figure();
-                kernel_plot_i = 1;
-            end
-            
             for i=1:length(files)
-                filename = [path files(i).name];
+                filename = [filedir files(i).name];
                 load(filename);
 
                 P = pstrf_result;
-                lags = P.lags(1:N_LAGS);
+                lags = P.lags(1:n_lags);
                 
                 if max(P.lambdas_scores) < min_score
                     continue;
                 end
                 
-
                 % Potential vectors to use for meta-analysis
                 mean_beta = P.theta;
                 impulse = P.theta_diff;
@@ -991,15 +999,6 @@ classdef STRF < handle
 
                 % Scale to Unit Variance
                 vectors(i,:) = vectors(i,:) / std(vectors(i,:));
-                
-                if plot_kernels && kernel_plot_i <= 35
-                    subplot(5,7,kernel_plot_i);
-                    plot(impulse,'-r');
-                    hold on;
-                    plot(mean_beta,'-b');
-                    title(P.src);
-                    kernel_plot_i = kernel_plot_i + 1;
-                end
             end
 
             % get rid of nan vectors
@@ -1023,10 +1022,6 @@ classdef STRF < handle
             color_palette{5} = 'm';
             color_palette{6} = [0.5 0.5 0.5];
 
-%             %MDS
-%             dissimilarities = pdist(vectors);
-%             MDS_Y = mdscale(dissimilarities,2,'criterion','metricstress');
-
             figure();
 
             subplot(N_ROWS,N_COLS,1);
@@ -1037,14 +1032,6 @@ classdef STRF < handle
             xlim([0 max(lags)]);
             title('Mean Temporal Impulse Response');
             xlabel('lag (ms)');
-
-%             subplot(N_ROWS,N_COLS,2);
-% 
-%             for i=1:n_clusters
-%                 scatter(MDS_Y((cluster_ix==i),1),MDS_Y((cluster_ix==i),2),36,color_palette{i});
-%                 hold on;
-%             end
-%             title('Multidimensional Scaling');
 
             max_cluster_y = max(clusters(:))*1.2;
             for i=1:n_clusters
@@ -1058,9 +1045,7 @@ classdef STRF < handle
                 title(sprintf('K-Means Centroid #%d (n=%d)',i,sum(cluster_ix==i)));
             end
             
-            boxtitle(sprintf('%c%s Mean Temporal IRs (min prediction = %.2f)',...
-                upper(stimulus(1)),...
-                stimulus(2:end),...
+            boxtitle(sprintf('Mean Temporal IRs (min prediction = %.2f)',...
                 min_score));
            
         end
