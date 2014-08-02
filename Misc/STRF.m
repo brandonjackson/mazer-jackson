@@ -1086,7 +1086,7 @@ classdef STRF < handle
                     fprintf('=================================================\n[%d / %d]',i,n_files);
                     fprintf(' LOADING %s\n-------------------------------------------------\n',file_list{i});
                     pf = pffind(file_list{i});
-                    pstrf_delta_batch(pf, lambda, filedir, 'bin_width', 10, 'n_lags', 24);
+                    STRF.save_pstrf_delta(pf, lambda, filedir, 'bin_width', 10, 'n_lags', 24);
                 catch err
                      warning(getReport(err));
                 end
