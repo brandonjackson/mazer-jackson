@@ -171,10 +171,6 @@ Scripts
 To-Do List
 ----------
 
-- Convert batch scripts to load lists of files using the database, instead
-of scanning directories filled with data files
-- Clean up the code used to generate batch pstrf_delta results, and add to
- the repo
 - I need to ensure that the ouputs of all model classes are consistent, and
 then document it, perhaps in a how-to-write-a-model guide.
 - A new system for organizing analysis code is necessary, because at the
