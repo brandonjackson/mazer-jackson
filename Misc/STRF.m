@@ -1070,5 +1070,81 @@ classdef STRF < handle
             theta = S.regress('lambda',lambda);
         end
         
+        function [] = batch_pstrf_delta(file_list, lambda, filedir)
+        % BATCH_PSTRF_DELTA runs and saves pstrf_delta results for many
+        % cells
+        %
+        % INPUTS
+        %   file_list - cell array with file names (or any thing that can
+        %               be fed into dbfind)
+        %   lambda - lambda to use in analysis (can be a number or 'auto')
+        %   filedir - directory to ouptut saved files (with trailing
+        %            slash!)
+            n_files = length(file_list);
+            for i=1:n_files
+                try
+                    fprintf('=================================================\n[%d / %d]',i,n_files);
+                    fprintf(' LOADING %s\n-------------------------------------------------\n',file_list{i});
+                    pf = pffind(file_list{i});
+                    pstrf_delta_batch(pf, lambda, filedir, 'bin_width', 10, 'n_lags', 24);
+                catch err
+                     warning(getReport(err));
+                end
+            end
+        end
+        
+        function [] = save_pstrf_delta(pf, lambda, filedir, varargin)
+        % SAVE_PSTRF_DELTA saves results of pstrf_delta for use in batch analysis
+        %
+        % INPUTS
+        %   pf - p2m file
+        %   lambda - number or string 'auto'
+        %   filedir - directory to output files to (with trailing slash!)
+
+            pf = PFUtil.removeBadTrials(pf);
+
+            % process lambda param, generate string to be used in file names
+            auto_lambda = strcmp(lambda,'auto');
+            if strcmp(lambda,'auto')==1
+                lambda_str = 'auto';
+            else
+                lambda_str = sprintf('%.2f',lambda);
+            end
+
+            % Run analysis
+            S = STRF(pf,'feature','delta','auto_lambda',auto_lambda,varargin{:});
+
+            if auto_lambda
+                lambda = S.best_lambda;
+            end
+
+            % Save Numerical Results to File
+            R = {};
+            [R.theta, R.theta_err, R.theta_diff] = S.plotThetaDelta(lambda);
+            R.src = S.pf.src;
+            R.best_lambda = S.best_lambda;
+            R.lambdas = S.lambdas;
+            R.lambdas_scores = S.lambdas_scores;
+            R.lambdas_scores_err = S.lambdas_scores_err;
+            R.lambdas_scores_raw = S.lambdas_scores_raw;
+            R.lags = 0:S.BIN_WIDTH:S.BIN_WIDTH*S.N_LAGS;
+            [~,exper_name,exper_no] = fileparts(S.pf.src);
+            pstrf_result = R;
+            save([filedir exper_name exper_no '_pstrf_delta_result_lambda_' lambda_str '.mat'],'pstrf_result');
+
+            % Save Figure to File
+            filename = [filedir exper_name exper_no '_pstrf_delta_lambda_' lambda_str '.png'];
+            
+            % Tries to load the 'printable' export setting
+            try
+                sdf('printable');
+            catch err
+                warning('Export preset "printable" undefined, using default export settings');
+            end
+            
+            orient portrait;
+            print('-dpng',filename);
+            close all;
+        end
     end
 end
