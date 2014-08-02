@@ -1119,6 +1119,7 @@ classdef STRF < handle
             end
 
             % Save Numerical Results to File
+            % The results are stored in a struct called 'pstrf_result' 
             R = {};
             [R.theta, R.theta_err, R.theta_diff] = S.plotThetaDelta(lambda);
             R.src = S.pf.src;
@@ -1127,7 +1128,8 @@ classdef STRF < handle
             R.lambdas_scores = S.lambdas_scores;
             R.lambdas_scores_err = S.lambdas_scores_err;
             R.lambdas_scores_raw = S.lambdas_scores_raw;
-            R.lags = 0:S.BIN_WIDTH:S.BIN_WIDTH*S.N_LAGS;
+            
+            R.lags = 0:S.BIN_WIDTH:S.BIN_WIDTH*(S.N_LAGS - 1);
             [~,exper_name,exper_no] = fileparts(S.pf.src);
             pstrf_result = R;
             save([filedir exper_name exper_no '_pstrf_delta_result_lambda_' lambda_str '.mat'],'pstrf_result');
